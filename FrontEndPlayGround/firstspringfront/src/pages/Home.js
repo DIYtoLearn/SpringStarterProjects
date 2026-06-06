@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
+import { Link, useParams } from 'react-router-dom';
 
 export default function Home() {
 
     const[users,setUsers]=useState([])
+    const {id}=useParams
     
     useEffect(()=>{
         console.log("First Spring Loading ..");
@@ -13,6 +15,11 @@ export default function Home() {
     const loadUsers=async()=>{
         const result=await axios.get("http://localhost:8080/v1/UserData")
         setUsers(result.data);
+    }
+
+    const deleteuser= async (id)=>{
+        await axios.delete(`http://localhost:8080/v1/Delete/${id}`)
+        loadUsers()
     }
 
 
@@ -36,8 +43,13 @@ export default function Home() {
       <td>{users.emailAddress}</td>
       <td>{users.userName}</td>
       <td>
-        <button className='btn btn-primary mx-2'>Edit</button>
-        <button className='btn btn-danger mx-2'>Delete</button>
+        <Link className='btn btn-primary mx-2'
+        to={`/edituser/${users.id}`}>
+            Edit
+        </Link>
+        <button className='btn btn-danger mx-2'
+        onClick={()=>deleteuser(users.id)}
+        >Delete</button>
       </td>
     </tr>
         ))
