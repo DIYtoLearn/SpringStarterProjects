@@ -4,9 +4,6 @@ import { Link, useNavigate } from 'react-router-dom';
 
 export default function AddUser() {
 
-    const currentIP = window.location.hostname;
-    const API_URL = `http://${currentIP}:8080/v1`;
-
     let navigation=useNavigate()
 
   const [user, setUser] = useState({
@@ -26,7 +23,7 @@ export default function AddUser() {
     
     // You will put your axios.post() request here soon!
     console.log("Form data ready to be sent to Spring Boot:", user);
-    await axios.post(`${API_URL}/AddUser`, user)
+    await axios.post(`/AddUser`, user)
     navigation("/")
   };
 

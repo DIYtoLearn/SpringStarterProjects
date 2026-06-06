@@ -7,20 +7,19 @@ export default function Home() {
 
     const [users, setUsers] = useState([]);
     const { id } = useParams();
-    const currentIP = window.location.hostname;
-    const API_URL = `http://${currentIP}:8080/v1`;
+
     
     useEffect(() => {
         loadUsers();
     }, []);
 
     const loadUsers = async () => {
-        const result = await axios.get(`${API_URL}/UserData`);
+        const result = await axios.get("/UserData");
         setUsers(result.data);
     };
 
     const deleteuser = async (id) => {
-        await axios.delete(`${API_URL}/Delete/${id}`);
+        await axios.delete(`/Delete/${id}`);
         loadUsers();
     };
 

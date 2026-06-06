@@ -4,9 +4,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 
 export default function EditUser() {
 
-    const currentIP = window.location.hostname;
-    const API_URL = `http://${currentIP}:8080/v1`;
-
   let navigate = useNavigate(); // Standard convention is to call this 'navigate'
 
   const { id } = useParams();
@@ -31,14 +28,14 @@ export default function EditUser() {
     e.preventDefault(); 
     
     console.log("Form data ready to be sent to Spring Boot:", user);
-    await axios.put(`${API_URL}/EditData/${id}`, user);
+    await axios.put(`/EditData/${id}`, user);
     navigate("/");
   };
 
   // FIX 3: Corrected the async arrow function syntax
 const loadUsers = async () => {
     // Change this URL to your backend's GET endpoint for a single user.
-    const result = await axios.get(`${API_URL}/UserData/${id}`);
+    const result = await axios.get(`/UserData/${id}`);
     setUser(result.data);
   };
 
