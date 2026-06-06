@@ -4,27 +4,36 @@ import { Link, useNavigate } from 'react-router-dom';
 
 export default function AddUser() {
 
-    let navigation=useNavigate()
+  let navigation = useNavigate();
 
   const [user, setUser] = useState({
     userName: "",
     emailAddress: ""
   });
 
+  // 1. Add an error state to track validation failures
+  const [error, setError] = useState("");
+
   const { userName, emailAddress } = user;
 
   const onInputChange = (e) => {
+    // 2. Clear the error message as soon as the user starts typing again
+    setError("");
     setUser({ ...user, [e.target.name]: e.target.value });
   };
 
-  // This function intercepts the form submission
   const onSubmit = async (e) => {
-    e.preventDefault(); // Prevents the default page reload
+    e.preventDefault(); 
     
-    // You will put your axios.post() request here soon!
+    // 3. The Validation Check: Check if either field is empty or just whitespace
+    if (!userName.trim() || !emailAddress.trim()) {
+      setError("Fields cannot be empty. Please provide both a Name and an Email.");
+      return; // This completely stops the function, preventing the axios request
+    }
+
     console.log("Form data ready to be sent to Spring Boot:", user);
-    await axios.post(`/AddUser`, user)
-    navigation("/")
+    await axios.post(`/AddUser`, user);
+    navigation("/");
   };
 
   return (
@@ -33,7 +42,13 @@ export default function AddUser() {
         <div className="col-md-6 offset-md-3 border rounded p-4 mt-2 shadow">
           <h4 className="text-center m-2">Add user data to Central DB</h4>
           
-          {/* We wrap the inputs and buttons inside the form element */}
+          {/* 4. Conditionally render a red Bootstrap alert if an error exists */}
+          {error && (
+            <div className="alert alert-danger" role="alert">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={onSubmit}>
             
             <div className='mb-3'>
@@ -65,8 +80,6 @@ export default function AddUser() {
             </div>
 
             <button type="submit" className='btn btn-outline-primary'>Submit</button>
-            
-            {/* The button is replaced with a Link component for routing */}
             <Link className='btn btn-outline-danger mx-2' to="/">Go Back</Link>
             
           </form>

@@ -2,6 +2,7 @@ package com.upayan.firstspring.Controller;
 import com.upayan.firstspring.Exception.UserNotFoundException;
 import com.upayan.firstspring.Model.Users;
 import com.upayan.firstspring.Repository.UserRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,7 +17,7 @@ public class UserController {
 
 
     @PostMapping("v1/AddUser")
-    Users us1(@RequestBody Users us1){
+    Users us1(@Valid @RequestBody Users us1){
         return userRepo.save(us1);
     }
 
@@ -33,7 +34,7 @@ public class UserController {
     }
 
     @PutMapping("v1/EditData/{id}")
-    Users updateUser(@RequestBody Users us2,
+    Users updateUser(@Valid @RequestBody Users us2,
                      @PathVariable Integer id) {
 
         return userRepo.findById(id)
