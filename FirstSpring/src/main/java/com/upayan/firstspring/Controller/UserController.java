@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin("http://192.168.1.16:3000")
+@CrossOrigin(origins = "https://gigahertz-stencil-exploring.ngrok-free.dev")
 public class UserController {
 
     @Autowired
