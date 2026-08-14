@@ -58,3 +58,41 @@ and understand `application.properties`.
 In your own words, explain why Spring Web leads Spring Boot to configure a web
 application, then inspect `application.properties` and identify how it can
 override a default such as the server port.
+
+### Phase 1 Completion and Phase 2 Start — Configuration and Routing
+
+- Explained the relationship between the Spring Web MVC dependency,
+  `@SpringBootApplication`, and web auto-configuration.
+- Updated `application.properties` with `server.port=1999` and confirmed the
+  embedded server listened on that port.
+- Created `HomeController` in `com.DeatHertZ.urlshortener.controller`.
+- Implemented `GET /` and `GET /status` using `@RestController` and
+  `@GetMapping`, returning plain-text `String` response bodies.
+- Triggered and interpreted an ambiguous mapping error by temporarily mapping
+  both methods to `GET /`; restored the correct distinct paths afterward.
+
+### Concepts Learned
+
+- External configuration through `application.properties`.
+- `@RestController` as a controller whose return values become response bodies.
+- `@GetMapping` as a mapping from an HTTP GET request and URL path to a Java
+  method.
+- Spring MVC's startup-time validation of conflicting mappings.
+
+### Concepts to Reinforce
+
+- The distinction between component scanning and auto-configuration.
+- The class-level `@RequestMapping` shared path versus method-level mappings.
+- Why startup-time mapping validation prevents ambiguous runtime behavior.
+
+### Current Implementation State
+
+- The application runs on port `1999`.
+- `HomeController` provides `GET /` and `GET /status` plain-text endpoints.
+- No URL-shortening functionality, service layer, or persistence exists yet.
+
+### Exact Stopping Point and Next Learning Objective
+
+The two distinct GET endpoints have been restored and work. Next session,
+learn `@RequestMapping` as a class-level shared path and reason about how it
+combines with `@GetMapping` before designing the real URL-shortener endpoint.

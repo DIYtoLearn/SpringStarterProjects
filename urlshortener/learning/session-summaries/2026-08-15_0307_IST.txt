@@ -1,0 +1,87 @@
+URL Shortener Learning Session
+Date and time: 2026-08-15 03:07 IST
+
+What we explored
+=================
+
+1. Auto-configuration and the Spring Web MVC dependency
+
+The Spring Web MVC dependency makes web-related classes available on the
+application classpath. Because @SpringBootApplication enables Spring Boot's
+auto-configuration, Spring Boot sees that those web capabilities are
+available and applies suitable defaults for a web application, including an
+embedded Tomcat server.
+
+This is not the same as component scanning. Component scanning searches the
+application's root Java package and subpackages for classes such as
+HomeController. Auto-configuration evaluates available libraries and
+configuration conditions to decide which infrastructure Spring should set up.
+
+2. application.properties and server.port
+
+application.properties is external configuration: values kept outside Java
+source code that Spring Boot reads while the application starts. We added
+server.port=1999. Tomcat therefore started on port 1999 instead of its normal
+default, 8080. Seeing a 404 at http://localhost:1999/ before any controller
+existed was good evidence that the server itself was running; only the
+requested endpoint did not exist.
+
+3. First REST controller
+
+HomeController lives in com.DeatHertZ.urlshortener.controller, which is a
+subpackage of the application root package. Component scanning discovers it.
+@RestController marks the class as a controller whose returned values are
+written directly into HTTP responses. @GetMapping("/") maps GET requests for
+the root path to one Java method. Returning a String makes that text the HTTP
+response body.
+
+4. Routing two endpoints
+
+The controller now has two separate routes:
+
+GET /        -> checkRun()
+GET /status  -> getStatus()
+
+Spring MVC selects a handler using both the HTTP method and the path. A class
+can have many handler methods because each mapping tells Spring precisely
+which request belongs to which method.
+
+5. Ambiguous mapping experiment
+
+Temporarily assigning @GetMapping("/") to both methods caused an application
+startup failure. Spring's request-mapping registry found two methods for the
+same GET / request and could not select one safely. It rejected the
+configuration before Tomcat began serving traffic. The correct distinct
+mapping, @GetMapping("/status"), was then restored.
+
+Official reading, in plain language
+===================================
+
+- Spring Boot configuration:
+  https://docs.spring.io/spring-boot/how-to/properties-and-configuration.html
+
+  Read the opening section and "Discover Built-in Options for External
+  Properties." The important idea for now: Spring Boot collects configuration
+  from application.properties and other sources while starting, then binds
+  those values into its configuration objects. server.port is one of those
+  values. Do not worry yet about profiles, YAML, or property-source precedence.
+
+- Spring MVC controller declarations:
+  https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann.html
+
+  Read the @RestController paragraph. It explains the reason a returned String
+  was displayed in Chrome: @RestController effectively combines controller
+  behavior with the instruction to write return values into the response body,
+  rather than treating them as HTML-template names.
+
+- Spring MVC request mappings:
+  https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-requestmapping.html
+
+  Read the @RequestMapping section and its list of shortcuts. @GetMapping is
+  the focused version used when a method should handle GET only. Next session,
+  use the example with a class-level @RequestMapping and a method-level
+  @GetMapping to understand how their paths combine.
+
+Next session: begin with class-level @RequestMapping, then connect that idea
+to the eventual POST /api/urls endpoint. Do not build the URL-shortening
+feature yet.

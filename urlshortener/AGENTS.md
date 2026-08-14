@@ -103,6 +103,9 @@ First:
 7. Update the appropriate files under `learning/`.
 8. Do not modify application code unless explicitly requested.
 9. Make a note of where Exactly where we stopped
+10. Create a dated and timed text summary under `learning/session-summaries/`
+    covering the session's topics, with official documentation links explained
+    in plain language for later reading.
 
 After updating the learning state, provide a concise session summary
 and tell me what I should start with next time.

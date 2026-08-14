@@ -70,14 +70,15 @@ URL Shortener
 
 ## Current Status
 
-Phase 0 is complete. Phase 1 is in progress.
+Phases 0 and 1 are complete. Phase 2 is in progress.
 
 The generated Spring Boot project has been created, tested, and started. The
-startup class, component scanning, and the basic idea of auto-configuration
-have been introduced. No application feature has been implemented yet.
+startup class, component scanning, auto-configuration, and
+`application.properties` have been introduced. A minimal controller now
+handles `GET /` and `GET /status`; no URL-shortening feature exists yet.
 
-The next step is to understand auto-configuration and
-`application.properties` before beginning Phase 2.
+The next step is to learn class-level `@RequestMapping` before designing the
+real URL-shortener endpoint.
 
 ---
 
