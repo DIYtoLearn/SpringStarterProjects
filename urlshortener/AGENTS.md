@@ -102,6 +102,7 @@ First:
 6. Identify the exact next learning objective.
 7. Update the appropriate files under `learning/`.
 8. Do not modify application code unless explicitly requested.
+9. Make a note of where Exactly where we stopped
 
 After updating the learning state, provide a concise session summary
 and tell me what I should start with next time.

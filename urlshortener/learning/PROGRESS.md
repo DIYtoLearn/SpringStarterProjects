@@ -31,6 +31,30 @@ the first application feature.
 
 ### Exact Stopping Point
 
-The application has not yet been started manually. The next task is to run
-`./mvnw spring-boot:run`, inspect the startup log and `localhost:8080`, then
-explain what `SpringApplication.run(...)` sets up.
+The application was started manually. The next task is to explain
+auto-configuration in the context of the Spring Web dependency, then inspect
+and understand `application.properties`.
+
+## 2026-08-15
+
+### Phase 1 Session — Application Startup
+
+- Ran the application and observed the embedded server startup.
+- Distinguished Maven compilation from Spring Boot startup.
+- Learned the purposes of `main()`, `SpringApplication.run(...)`, and
+  `@SpringBootApplication` at a beginner level.
+- Learned that component scanning begins in
+  `com.DeatHertZ.urlshortener` and includes its subpackages.
+- Began auto-configuration: Spring Boot uses available dependencies to apply
+  defaults, such as starting embedded Tomcat when Spring Web is present.
+
+### Concepts to Reinforce
+
+- Auto-configuration versus manually supplied configuration.
+- The role of `application.properties` in overriding defaults.
+
+### Exact Next Learning Objective
+
+In your own words, explain why Spring Web leads Spring Boot to configure a web
+application, then inspect `application.properties` and identify how it can
+override a default such as the server port.

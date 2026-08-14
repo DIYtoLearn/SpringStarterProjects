@@ -70,13 +70,14 @@ URL Shortener
 
 ## Current Status
 
-Pre-implementation / Phase 0 complete.
+Phase 0 is complete. Phase 1 is in progress.
 
-The project has not yet started the Spring Boot implementation.
+The generated Spring Boot project has been created, tested, and started. The
+startup class, component scanning, and the basic idea of auto-configuration
+have been introduced. No application feature has been implemented yet.
 
-The next step is:
-
-**Phase 1 — Create and understand the initial Spring Boot project.**
+The next step is to understand auto-configuration and
+`application.properties` before beginning Phase 2.
 
 ---
 
