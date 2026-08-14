@@ -65,7 +65,7 @@ Beginner.
 
 | Concept | Level | Notes |
 |---|---:|---|
-| Spring Boot | 1 | Beginning |
+| Spring Boot | 1 | Initial project structure, startup class, configuration, and context test introduced; explanation not yet assessed. |
 | IoC | 0 | |
 | Dependency Injection | 0 | |
 | Beans | 0 | |
@@ -76,7 +76,8 @@ Beginner.
 
 ## Recurring Mistakes
 
-None yet.
+- Explain the startup path from `main()` and `SpringApplication.run(...)` to the embedded web server.
+- Distinguish Maven's production dependency from its test dependency.
 
 ## Concepts To Revisit
 
@@ -86,3 +87,12 @@ None yet.
 
 Create the base Spring Boot project and understand its structure
 before implementing application features.
+
+## Session Notes — 2026-08-14
+
+- Reviewed the generated project structure and the roles of `pom.xml`,
+  `src/main`, `src/test`, `application.properties`, and the Maven Wrapper.
+- Simplified the Phase 1 dependency set to Spring Web MVC plus its test
+  support; database, validation, and Lombok dependencies were deferred.
+- The Spring context test passed, but application startup and the embedded
+  server have not yet been observed directly.
