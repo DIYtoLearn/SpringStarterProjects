@@ -1,0 +1,73 @@
+Session summary - 2026-08-15 16:44:20 +05:30
+
+Project: URL Shortener (Java and Spring Boot learning project)
+
+Where we stopped
+----------------
+The controller's POST /api/urls endpoint receives JSON as @RequestBody String.
+The learner correctly identified that the complete JSON text, for example
+{"url":"https://example.com"}, cannot be used directly as the long-URL key.
+The next task is to bind that JSON to a small Java request object and use its
+url field as a String for duplicate lookup in urlToShortCode.
+
+Current implementation state
+----------------------------
+- Application port: 1999.
+- GET /api returns the root controller message.
+- GET /api/status returns the status message.
+- POST /api/urls consumes application/json and currently echoes the raw JSON.
+- urlToShortCode and shortCodeToUrl are controller fields and are still empty.
+- The controller prints the current maps when POST /api/urls is called.
+- No short code is generated and no map insertion exists yet.
+
+Topics covered
+--------------
+1. Class-level @RequestMapping("/api") combines with method mappings to form
+   complete endpoint paths.
+2. /status returns 404 after adding the /api base path because the route is now
+   /api/status.
+3. /api and /api/ can be distinct path mappings. @GetMapping("/") describes
+   the trailing-slash route; @GetMapping() was used for /api.
+4. @PostMapping maps a method only for HTTP POST. A browser address bar usually
+   sends GET, so Postman was used to test POST.
+5. Sending GET to POST /api/urls produced 405 Method Not Allowed: Spring found
+   the path but that method is unsupported there.
+6. consumes = application/json matches the request Content-Type. A mismatched
+   type produced 415 Unsupported Media Type.
+7. @RequestBody String receives the whole raw request body, not automatically
+   the nested url value.
+8. Two HashMaps were selected: urlToShortCode for duplicate lookup and
+   shortCodeToUrl for later redirect lookup.
+
+Misconceptions or corrections
+-----------------------------
+- Checking whether a map is empty before every duplicate lookup is unnecessary;
+  lookup operations already safely report no match on an empty map.
+- The raw JSON document and the URL contained inside it are different strings.
+  The raw JSON must not become the duplicate-lookup key.
+- A 404 means no matching endpoint path; a 405 means the path exists but the
+  HTTP method is not permitted for it.
+
+Concepts needing reinforcement
+------------------------------
+- Binding JSON to a Java object with @RequestBody.
+- The roles of HTTP path, HTTP method, Content-Type, and response status.
+- Why controller-held in-memory maps reset when the application restarts.
+- The two directions of map lookup and where each will be used.
+
+Exact next learning objective
+-----------------------------
+Create a tiny request DTO representing the incoming JSON, bind it in
+createShortUrl with @RequestBody, and use its url field for a first lookup in
+urlToShortCode. Do this before implementing short-code generation or insertion.
+
+Later reading
+-------------
+- Spring MVC request mappings:
+  https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-requestmapping.html
+- Spring MVC handler method arguments, including @RequestBody:
+  https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-methods.html
+- @PostMapping API documentation:
+  https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/bind/annotation/PostMapping.html
+- Java Map interface (Java 21):
+  https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Map.html

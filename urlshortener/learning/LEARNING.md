@@ -87,7 +87,11 @@ Beginner.
 | Dependency Injection | 0 | |
 | Beans | 0 | |
 | REST Controllers | 4 | Implemented a `@RestController` with two `@GetMapping` methods using a syntax skeleton; understands that the annotation marks the class, not a URL path. |
-| Request mapping | 3 | Can explain that Spring routes requests by HTTP method plus path, and observed the startup error caused by two `GET /` mappings. |
+| Request mapping | 4 | Used class-level `@RequestMapping("/api")` with method-level mappings; can explain that Spring routes by HTTP method plus the combined path. |
+| `@PostMapping` | 3 | Implemented and tested a POST-only endpoint; correctly interpreted `405 Method Not Allowed` after sending GET to it. |
+| `@RequestBody` | 3 | Can receive JSON as a raw `String`; identified that the `url` value must be extracted before it can be used as a map key. |
+| JSON content type / `consumes` | 3 | Tested `consumes = application/json` and connected an incorrect content type with `415 Unsupported Media Type`. |
+| In-memory maps | 3 | Chose two `HashMap`s for URL-to-code duplicate lookup and code-to-URL lookup; insertion logic is the next step. |
 | Validation | 0 | |
 | Spring Data JPA | 0 | |
 | Transactions | 0 | |
@@ -104,11 +108,16 @@ Beginner.
   dependencies and defaults, and how application configuration overrides them.
 - Request mapping: distinguish the class-level shared path provided by
   `@RequestMapping` from an individual method mapping such as `@GetMapping`.
+- JSON request binding: distinguish receiving the entire raw JSON document as a
+  `String` from binding its `url` property into a Java object.
+- In-memory storage: explain why `urlToShortCode` and `shortCodeToUrl` serve
+  different lookup directions, and why controller-held maps disappear on restart.
 
 ## Current Objective
 
-Continue Phase 2 by learning class-level `@RequestMapping`, then explain how
-Spring combines it with a method-level `@GetMapping` to form an endpoint path.
+Begin Phase 3: bind the JSON request body of `POST /api/urls` to a small Java
+request object, then use the extracted URL string to perform duplicate lookup
+in `urlToShortCode`.
 
 ## Session Notes — 2026-08-14
 
@@ -152,3 +161,27 @@ Spring combines it with a method-level `@GetMapping` to form an endpoint path.
 - Prefers small Spring syntax skeletons and explanations before exercises;
   the tutor may inspect repository code whenever it helps teaching. These are
   durable preferences and must be preserved in future learning-state updates.
+
+## Session Notes - 2026-08-15 (Request Mapping, POST, JSON, and In-Memory Maps)
+
+- Added class-level `@RequestMapping("/api")`. This made the existing handlers
+  available at `GET /api` and `GET /api/status`; the former `/status` path now
+  correctly returns `404`.
+- Investigated the difference between `/api` and `/api/`. A method mapped with
+  `@GetMapping("/")` matched the trailing-slash path, while `@GetMapping()`
+  matched `/api` after the mapping was adjusted.
+- Added `POST /api/urls`, tested it with Postman, and correctly noted that a
+  browser address bar normally sends GET rather than POST.
+- Sent GET to the POST-only URL and interpreted the `405 Method Not Allowed`
+  response as Spring finding the path but rejecting the unsupported method.
+- Restricted the endpoint with `consumes = MediaType.APPLICATION_JSON_VALUE`.
+  Tested the matching `Content-Type` header and learned that an unsupported
+  media type results in `415 Unsupported Media Type`.
+- Received the JSON body with `@RequestBody String requestBody`; observed that
+  it is the complete JSON document, for example `{"url":"https://example.com"}`.
+- Compared an `ArrayList` of pairs with a `HashMap` design, then selected two
+  maps: `urlToShortCode` for duplicate detection and `shortCodeToUrl` for the
+  later redirect lookup.
+- Added both maps as controller fields and printed their current state. They
+  are intentionally still empty because creation and insertion logic have not
+  been implemented yet.

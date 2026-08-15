@@ -79,6 +79,44 @@ Accepted.
 
 ---
 
+## ADR-006 - API Base Path
+
+### Decision
+
+Use class-level `@RequestMapping("/api")` for controller API endpoints.
+The current endpoints are `GET /api`, `GET /api/status`, and `POST /api/urls`.
+
+### Reason
+
+The shared prefix groups API routes and leaves a future root-level short-code
+redirect route available without mixing it with API endpoints.
+
+### Status
+
+Accepted.
+
+---
+
+## ADR-007 - Phase 3 In-Memory Duplicate Lookup
+
+### Decision
+
+Use two maps: `urlToShortCode` for long-URL duplicate lookup and
+`shortCodeToUrl` for short-code resolution.
+
+### Reason
+
+The URL-creation flow needs to find an existing code by long URL, while the
+future redirect flow needs to find the long URL by short code. Each map makes
+its needed lookup direct and clear for this learning phase.
+
+### Status
+
+Accepted for the in-memory learning implementation; persistence will replace
+these maps in a later phase.
+
+---
+
 ## Open Decisions
 
 Decisions that have not yet been finalized should be recorded here

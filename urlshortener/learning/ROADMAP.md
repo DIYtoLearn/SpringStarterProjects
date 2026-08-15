@@ -70,15 +70,17 @@ URL Shortener
 
 ## Current Status
 
-Phases 0 and 1 are complete. Phase 2 is in progress.
+Phases 0, 1, and 2 are complete. Phase 3 is in progress.
 
 The generated Spring Boot project has been created, tested, and started. The
 startup class, component scanning, auto-configuration, and
 `application.properties` have been introduced. A minimal controller now
-handles `GET /` and `GET /status`; no URL-shortening feature exists yet.
+handles `GET /api`, `GET /api/status`, and a JSON-consuming `POST /api/urls`.
+The POST endpoint currently echoes the raw body; no URL-shortening feature is
+implemented yet.
 
-The next step is to learn class-level `@RequestMapping` before designing the
-real URL-shortener endpoint.
+The next step is to bind the JSON request to a Java object and use its URL
+value for duplicate lookup before designing short-code creation.
 
 ---
 
@@ -713,11 +715,15 @@ Learn:
 
 Create a minimal endpoint before building the URL shortener.
 
+Status: Complete.
+
 ---
 
 ## Phase 3 — In-Memory URL Shortener
 
 Build the first functional version without a database.
+
+Status: In progress.
 
 Learn:
 
@@ -979,6 +985,23 @@ Do not immediately replace the student's implementation with a complete solution
 ---
 
 # 20. Immediate Next Step
+
+The project is currently in Phase 3. `POST /api/urls` accepts JSON and currently
+receives it as a raw `String`; the two in-memory maps exist but are empty.
+
+Next learning steps:
+
+1. Introduce a small request DTO for `POST /api/urls`.
+2. Bind JSON such as `{"url":"https://example.com"}` to that object with
+   `@RequestBody`.
+3. Use the extracted URL string, rather than the raw JSON document, as the key
+   in `urlToShortCode`.
+4. Implement duplicate lookup before starting short-code generation.
+
+Do not introduce a database yet. The immediate aim is to understand Spring's
+JSON-to-Java binding and the two-direction in-memory lookup design.
+
+## Historical Initial Phase 1 Plan
 
 The project is currently at:
 
