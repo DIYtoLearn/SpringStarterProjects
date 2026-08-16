@@ -73,14 +73,14 @@ URL Shortener
 Phases 0, 1, and 2 are complete. Phase 3 is in progress.
 
 The generated Spring Boot project has been created, tested, and started. The
-startup class, component scanning, auto-configuration, and
-`application.properties` have been introduced. A minimal controller now
-handles `GET /api`, `GET /api/status`, and a JSON-consuming `POST /api/urls`.
-The POST endpoint currently echoes the raw body; no URL-shortening feature is
-implemented yet.
+application now creates in-memory short links from JSON requests, avoids
+duplicate long URLs and short-code collisions, and redirects known short
+codes. `POST /api/urls` and `GET /api/{shortCode}` currently work end-to-end.
 
-The next step is to bind the JSON request to a Java object and use its URL
-value for duplicate lookup before designing short-code creation.
+The next step is to introduce a service layer, Spring beans, and constructor
+dependency injection. This will let API creation remain under `/api` while a
+separate controller exposes the planned public redirect route, `GET
+/{shortCode}`.
 
 ---
 

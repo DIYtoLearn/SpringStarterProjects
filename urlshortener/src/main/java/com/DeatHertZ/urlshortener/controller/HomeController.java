@@ -1,12 +1,11 @@
 package com.DeatHertZ.urlshortener.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,9 +29,45 @@ public class HomeController {
     }
 
     @PostMapping(value = "/urls", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public String createShortUrl(@RequestBody String requestBody)
+    public String createShortUrl(@RequestBody CreateUrlRequest request)
     {
-        System.out.println("Current State of the Maps: "+urlToShortCode+" "+shortCodeToUrl);
-        return requestBody;
+
+        String shortCode;
+        String originalUrl = request.getUrl(); // Extract only the long URL from the json body
+
+        // Check if short Long URL exists ? return existing short code
+        if(urlToShortCode.containsKey(originalUrl)) { // Check if Long URL is already present
+            System.out.println("Current State of the Maps: "+urlToShortCode+" "+shortCodeToUrl);
+            return "http://localhost:1999/api/"+urlToShortCode.get(originalUrl);
+        }
+
+        // Else Generate short code and return the new URL in response
+        else{
+            GenerateShortCode gsc = new GenerateShortCode();
+
+            do {
+                gsc.generate();
+                shortCode = gsc.getShortCode().toString();
+            } while (shortCodeToUrl.containsKey(shortCode));
+
+            shortCodeToUrl.put(shortCode, originalUrl);
+            urlToShortCode.put(originalUrl, shortCode);
+
+            System.out.println("Current State of the Maps: "+urlToShortCode+" "+shortCodeToUrl);
+            return "http://localhost:1999/api/"+shortCode;
+
+        }
+    }
+
+    @GetMapping("/{shortCode}")
+    public ResponseEntity<Void> redirectToOriginalUrl(@PathVariable String shortCode){
+
+        String originalURL = shortCodeToUrl.get(shortCode);
+
+        if(originalURL == null)
+            return ResponseEntity.notFound().build();
+
+        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(originalURL)).build();
+
     }
 }

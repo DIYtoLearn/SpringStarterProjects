@@ -117,6 +117,26 @@ these maps in a later phase.
 
 ---
 
+## ADR-008 - Temporary Redirect Route During Controller-Only Phase
+
+### Decision
+
+The current redirect endpoint is `GET /api/{shortCode}` because it is defined
+inside the API controller, which has class-level `@RequestMapping("/api")`.
+
+### Reason
+
+Keeping all in-memory state in one controller allowed the learner to complete
+the initial DTO, map, and redirect exercises before introducing Spring beans
+and dependency injection.
+
+### Status
+
+Temporary. The next refactor will move URL-shortening logic into a shared
+service and restore the accepted public redirect route, `GET /{shortCode}`.
+
+---
+
 ## Open Decisions
 
 Decisions that have not yet been finalized should be recorded here

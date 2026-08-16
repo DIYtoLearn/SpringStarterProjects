@@ -148,3 +148,61 @@ that the `url` field must be extracted as a Java `String` before looking in
 `urlToShortCode`. Next, introduce a small request DTO for `POST /api/urls`,
 bind the JSON body with `@RequestBody`, and use the extracted URL string for
 duplicate lookup.
+
+## 2026-08-17
+
+### Phase 3 Completion — DTO Binding, Short-Code Creation, and Redirect
+
+- Created `CreateUrlRequest` and bound the JSON request body to it with
+  `@RequestBody`.
+- Extracted the original URL from the DTO, returned the existing short link for
+  duplicate URLs, and created a new code for previously unseen URLs.
+- Stored each successful mapping in both `urlToShortCode` and
+  `shortCodeToUrl`.
+- Used a `do...while` loop to regenerate a short code until it is not already a
+  key in `shortCodeToUrl`.
+- Corrected the random character bounds so the full intended alphanumeric
+  ranges are eligible for generation.
+- Implemented `GET /api/{shortCode}` with `@PathVariable`.
+- Returned `404 Not Found` for unknown short codes and a `302 Found` redirect
+  with a `Location` header for known codes. The redirect was tested manually
+  and works.
+- Ran `./mvnw test`; the existing Spring context test passed (1 test, 0
+  failures).
+
+### Concepts Learned
+
+- JSON-to-object binding with `@RequestBody` and a request DTO.
+- Getter/setter-based property binding for JSON fields.
+- Duplicate detection and bidirectional `HashMap` lookup.
+- Why a collision check must repeat until a unique value is produced.
+- `@PathVariable` for extracting a value from a URL segment.
+- `ResponseEntity` for setting status, headers, and an optional body.
+- HTTP `302 Found`, the `Location` header, and `404 Not Found`.
+
+### Concepts to Reinforce
+
+- The difference between returning a URL as response text and returning an
+  HTTP redirect response.
+- Class-level `@RequestMapping` applies to every method in that controller.
+- In-memory `HashMap` state disappears on restart and is not suitable for
+  concurrent production traffic.
+
+### Current Implementation State
+
+- `POST /api/urls` accepts JSON, returns an existing or newly generated short
+  link, and stores mappings in memory.
+- `GET /api/{shortCode}` redirects a known code and returns 404 for an unknown
+  code.
+- The creation response currently returns plain text and hard-codes
+  `http://localhost:1999/api/`.
+- The redirect is temporarily under `/api`; the roadmap's intended public
+  route is `/{shortCode}`.
+
+### Exact Stopping Point and Next Learning Objective
+
+The in-memory URL shortener works end-to-end and was manually tested. Next,
+learn IoC, Spring beans, and constructor dependency injection by extracting
+the shared maps and URL-shortening operations into a `UrlShortenerService`.
+Then create a separate root-level redirect controller so the final route can
+be `GET /{shortCode}` while API routes remain under `/api`.

@@ -1,0 +1,112 @@
+Session summary - 2026-08-17 00:18:11 +05:30
+codex resume 01a00a3b-0139-7b61-a93c-63582e92dbcf
+
+Project: URL Shortener (Java and Spring Boot learning project)
+
+Where we stopped
+----------------
+The in-memory URL shortener works end-to-end. POST /api/urls creates or
+reuses a short code, and GET /api/{shortCode} returns a real HTTP redirect for
+a known code or 404 Not Found for an unknown one. The redirect was tested
+manually. The next session begins with IoC, Spring beans, and constructor
+dependency injection so that shared URL logic can leave the controller and
+the planned public route GET /{shortCode} can be restored.
+
+Current implementation state
+----------------------------
+- Application port: 1999.
+- GET /api returns the root controller message.
+- GET /api/status returns the status message.
+- POST /api/urls consumes application/json and receives CreateUrlRequest.
+- CreateUrlRequest has a url property with standard getUrl and setUrl methods.
+- A duplicate original URL returns its existing short link.
+- A new original URL is assigned a nine-character alphanumeric short code.
+- urlToShortCode supports original URL -> short code lookup.
+- shortCodeToUrl supports short code -> original URL lookup.
+- Both maps are populated for each new URL mapping and reset on application
+  restart.
+- GET /api/{shortCode} looks up a code and returns either 302 Found with a
+  Location header or 404 Not Found.
+- ./mvnw test passed: 1 test, 0 failures. It is currently a context-load test,
+  not endpoint-specific coverage.
+
+Topics covered
+--------------
+1. JSON request DTO binding
+   @RequestBody CreateUrlRequest tells Spring to read the request body and
+   convert its JSON into a CreateUrlRequest instance. The JSON property "url"
+   is assigned through setUrl(...), then getUrl() returns its Java String.
+
+2. Duplicate long-URL lookup
+   urlToShortCode.containsKey(originalUrl) distinguishes a duplicate request
+   from a new URL. get(originalUrl) retrieves the existing code without
+   generating or storing another mapping.
+
+3. Bidirectional in-memory storage
+   A new mapping is stored in both maps because creation and redirection need
+   opposite lookup directions.
+
+4. Random short-code generation and collisions
+   A generated code must be absent from shortCodeToUrl before it is stored.
+   The first version retried only once; a second collision could still have
+   overwritten a mapping. A do...while loop now repeats until the code is
+   unique. Random.nextInt(origin, bound) excludes bound, so the ASCII bounds
+   were corrected to include Z, z, and 9.
+
+5. Path variables
+   @GetMapping("/{shortCode}") captures one path segment, and
+   @PathVariable String shortCode supplies that captured value to the method.
+   Since this method is inside a class mapped to /api, the actual current route
+   is /api/{shortCode}.
+
+6. ResponseEntity and redirect responses
+   ResponseEntity controls HTTP status, headers, and the optional body.
+   A known code returns 302 Found and Location: <original URL>; the browser or
+   HTTP client follows that header by making the next request itself. An
+   unknown code returns 404 Not Found. ResponseEntity<Void> is appropriate
+   because this redirect response has no body.
+
+Misconceptions or corrections
+-----------------------------
+- Raw JSON text is not the same as the URL value inside it. A DTO is needed to
+  receive the url property as a clean Java String.
+- Checking one generated code a second time is not sufficient. Collisions must
+  be checked repeatedly until a free code exists.
+- Returning the destination URL with 200 OK is not a redirect. A redirect is a
+  3xx response with a Location header.
+- A method-level mapping is combined with the controller's class-level mapping.
+  Therefore the current redirect is /api/{shortCode}, not /{shortCode}.
+- In-memory maps are useful for this learning phase but their contents vanish
+  after restart; plain HashMap controller state also needs redesign before
+  concurrent production use.
+
+Concepts needing reinforcement
+------------------------------
+- Explain the end-to-end JSON binding path: HTTP body -> Spring message
+  converter -> request DTO -> getter.
+- Explain which map is used for duplicate creation versus redirect lookup.
+- Explain why a redirect does not fetch the destination server-side.
+- Explain why shared application logic belongs in a service rather than being
+  duplicated or retained in controllers.
+
+Exact next learning objective
+-----------------------------
+Learn the basics of IoC, beans, @Service, and constructor injection. Then
+extract the URL maps plus create/lookup operations into UrlShortenerService,
+inject that service into an API controller and a separate redirect controller,
+and expose the public redirect at GET /{shortCode} while retaining POST
+/api/urls.
+
+Later reading (official, focused references)
+--------------------------------------------
+- Spring MVC controller method arguments: @RequestBody uses HTTP message
+  converters; @PathVariable reads URI template variables:
+  https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-methods/arguments.html
+- Spring MVC request mapping: class-level mappings provide a shared path and
+  method-level mappings narrow an endpoint:
+  https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-requestmapping.html
+- Spring MVC return values: ResponseEntity controls the full HTTP response,
+  including headers and body:
+  https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-methods/return-types.html
+- Java Map interface, including containsKey, get, and put:
+  https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Map.html

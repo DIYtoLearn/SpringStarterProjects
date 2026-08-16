@@ -89,9 +89,11 @@ Beginner.
 | REST Controllers | 4 | Implemented a `@RestController` with two `@GetMapping` methods using a syntax skeleton; understands that the annotation marks the class, not a URL path. |
 | Request mapping | 4 | Used class-level `@RequestMapping("/api")` with method-level mappings; can explain that Spring routes by HTTP method plus the combined path. |
 | `@PostMapping` | 3 | Implemented and tested a POST-only endpoint; correctly interpreted `405 Method Not Allowed` after sending GET to it. |
-| `@RequestBody` | 3 | Can receive JSON as a raw `String`; identified that the `url` value must be extracted before it can be used as a map key. |
+| `@RequestBody` | 4 | Bound JSON into `CreateUrlRequest` and extracted `url` through its getter. Understands that Spring converts the body into the declared Java type. |
 | JSON content type / `consumes` | 3 | Tested `consumes = application/json` and connected an incorrect content type with `415 Unsupported Media Type`. |
-| In-memory maps | 3 | Chose two `HashMap`s for URL-to-code duplicate lookup and code-to-URL lookup; insertion logic is the next step. |
+| `@PathVariable` | 4 | Implemented a path-variable lookup for a generated short code. |
+| `ResponseEntity` / HTTP responses | 4 | Implemented `404 Not Found` for an unknown code and a `302 Found` response with a `Location` header for a redirect. |
+| In-memory maps | 4 | Implemented duplicate lookup, collision-safe code generation, insertion, and reverse lookup with two `HashMap`s. |
 | Validation | 0 | |
 | Spring Data JPA | 0 | |
 | Transactions | 0 | |
@@ -112,12 +114,17 @@ Beginner.
   `String` from binding its `url` property into a Java object.
 - In-memory storage: explain why `urlToShortCode` and `shortCodeToUrl` serve
   different lookup directions, and why controller-held maps disappear on restart.
+- Redirect routing: explain why a method in a controller annotated with
+  `@RequestMapping("/api")` is available beneath `/api`, even if its method
+  mapping starts with `/{shortCode}`.
 
 ## Current Objective
 
-Begin Phase 3: bind the JSON request body of `POST /api/urls` to a small Java
-request object, then use the extracted URL string to perform duplicate lookup
-in `urlToShortCode`.
+Begin the service-layer introduction: understand why request handling and
+shared URL-shortening state should not live in a controller, then create a
+Spring-managed `UrlShortenerService` and inject it into controllers using a
+constructor. Use that shared service to support the planned root-level
+`GET /{shortCode}` redirect route.
 
 ## Session Notes — 2026-08-14
 
@@ -185,3 +192,27 @@ in `urlToShortCode`.
 - Added both maps as controller fields and printed their current state. They
   are intentionally still empty because creation and insertion logic have not
   been implemented yet.
+
+## Session Notes - 2026-08-17 (DTO Binding, In-Memory Creation, and Redirects)
+
+- Replaced raw `@RequestBody String` handling with `@RequestBody
+  CreateUrlRequest`. Spring binds the JSON `url` property to the DTO through
+  its JavaBean setter, and the controller reads it through `getUrl()`.
+- Implemented the URL-creation flow: duplicate long URLs return their existing
+  short link; new URLs receive a generated code and are stored in both maps.
+- Identified that retrying a short-code collision only once could still allow a
+  second collision to overwrite a mapping. Replaced that logic with a
+  `do...while` loop that continues until a unique code is produced.
+- Corrected the exclusive upper bounds used by `Random.nextInt(origin, bound)`,
+  allowing `Z`, `z`, and `9` to be generated.
+- Added `GET /api/{shortCode}` using `@PathVariable` and verified that it
+  resolves a stored code.
+- Replaced the temporary `200 OK` plain-text lookup response with
+  `ResponseEntity<Void>`: an unknown code produces `404 Not Found`; a known
+  code produces `302 Found` and a `Location` header using `URI.create(...)`.
+- Tested the redirect successfully. The client, rather than this application,
+  follows the `Location` header to the destination URL.
+- Observed that the class-level `@RequestMapping("/api")` means the currently
+  working redirect is `/api/{shortCode}`. The intended final public route is
+  `/{shortCode}`, which will require separating shared URL logic from the API
+  controller.
