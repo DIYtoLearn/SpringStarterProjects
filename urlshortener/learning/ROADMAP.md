@@ -70,17 +70,16 @@ URL Shortener
 
 ## Current Status
 
-Phases 0, 1, and 2 are complete. Phase 3 is in progress.
+Phases 0 through 4 are complete. The application has a working in-memory
+implementation with a separate service layer and root-level redirect route.
 
 The generated Spring Boot project has been created, tested, and started. The
-application now creates in-memory short links from JSON requests, avoids
-duplicate long URLs and short-code collisions, and redirects known short
-codes. `POST /api/urls` and `GET /api/{shortCode}` currently work end-to-end.
+application creates in-memory short links from JSON requests, avoids duplicate
+long URLs and short-code collisions, and redirects known short codes. API
+creation remains at `POST /api/urls`; public redirects use `GET /{shortCode}`.
 
-The next step is to introduce a service layer, Spring beans, and constructor
-dependency injection. This will let API creation remain under `/api` while a
-separate controller exposes the planned public redirect route, `GET
-/{shortCode}`.
+The next phase introduces durable database persistence with Spring Data JPA,
+Hibernate, and MySQL. The in-memory maps will later be replaced by a repository.
 
 ---
 
@@ -723,7 +722,7 @@ Status: Complete.
 
 Build the first functional version without a database.
 
-Status: In progress.
+Status: Complete.
 
 Learn:
 
@@ -779,6 +778,8 @@ Learn:
 - why business logic should not live entirely inside controllers
 
 The student should understand what Spring is doing rather than merely memorizing annotations.
+
+Status: Complete.
 
 ---
 
@@ -986,20 +987,21 @@ Do not immediately replace the student's implementation with a complete solution
 
 # 20. Immediate Next Step
 
-The project is currently in Phase 3. `POST /api/urls` accepts JSON and currently
-receives it as a raw `String`; the two in-memory maps exist but are empty.
+The project has completed the in-memory implementation and the service-layer
+refactor. `UrlShortenerService` is the shared Spring-managed owner of the two
+maps and the create/lookup operations. `HomeController` handles API creation
+under `/api`, and `RedirectController` handles `GET /{shortCode}`.
 
 Next learning steps:
 
-1. Introduce a small request DTO for `POST /api/urls`.
-2. Bind JSON such as `{"url":"https://example.com"}` to that object with
-   `@RequestBody`.
-3. Use the extracted URL string, rather than the raw JSON document, as the key
-   in `urlToShortCode`.
-4. Implement duplicate lookup before starting short-code generation.
-
-Do not introduce a database yet. The immediate aim is to understand Spring's
-JSON-to-Java binding and the two-direction in-memory lookup design.
+1. Explain why a mapping in a `HashMap` vanishes when the application restarts
+   and why a database solves that problem.
+2. Review the planned `URL_MAPPING` database model before adding dependencies.
+3. Introduce Spring Data JPA, Hibernate, MySQL configuration, an entity, and a
+   repository incrementally; do not generate the complete persistence layer at
+   once.
+4. Replace in-memory map operations only after the repository concepts are
+   understood and tested.
 
 ## Historical Initial Phase 1 Plan
 

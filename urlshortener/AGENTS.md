@@ -21,7 +21,7 @@ learning files as persistent memory of my progress.
 - Review my reasoning before suggesting alternatives.
 - Do not rewrite working code unnecessarily.
 - Explain important Java and Spring mechanisms behind the code.
-- Point me toward official documentation when appropriate.
+- Point me toward official documentation or other popular online reading materials when appropriate.
 - When I make a mistake, explain WHY it is wrong.
 - Help me understand errors rather than merely fixing them.
 - Adapt the difficulty and amount of guidance to my demonstrated

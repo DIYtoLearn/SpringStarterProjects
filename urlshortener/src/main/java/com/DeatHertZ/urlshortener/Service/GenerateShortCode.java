@@ -1,4 +1,4 @@
-package com.DeatHertZ.urlshortener.controller;
+package com.DeatHertZ.urlshortener.Service;
 
 import java.util.Random;
 

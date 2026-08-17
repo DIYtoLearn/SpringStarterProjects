@@ -83,9 +83,9 @@ Beginner.
 | Component scanning | 2 | Can explain that Spring scans the root package and its subpackages for Spring-annotated classes to manage. |
 | Auto-configuration | 2 | Can explain with help that Spring Boot evaluates available dependencies and applies matching defaults, such as a web server for Spring Web MVC. |
 | External configuration | 3 | Changed `server.port` in `application.properties` to `1999` and verified that embedded Tomcat used it at startup. |
-| IoC | 0 | |
-| Dependency Injection | 0 | |
-| Beans | 0 | |
+| IoC | 3 | Can explain that Spring, rather than application code, creates and connects managed objects. |
+| Dependency Injection | 4 | Implemented constructor injection of one shared service into two controllers with guidance. |
+| Beans | 3 | Understands that an `@Service` discovered by component scanning is a Spring-managed bean shared by both controllers in this application context. |
 | REST Controllers | 4 | Implemented a `@RestController` with two `@GetMapping` methods using a syntax skeleton; understands that the annotation marks the class, not a URL path. |
 | Request mapping | 4 | Used class-level `@RequestMapping("/api")` with method-level mappings; can explain that Spring routes by HTTP method plus the combined path. |
 | `@PostMapping` | 3 | Implemented and tested a POST-only endpoint; correctly interpreted `405 Method Not Allowed` after sending GET to it. |
@@ -93,7 +93,7 @@ Beginner.
 | JSON content type / `consumes` | 3 | Tested `consumes = application/json` and connected an incorrect content type with `415 Unsupported Media Type`. |
 | `@PathVariable` | 4 | Implemented a path-variable lookup for a generated short code. |
 | `ResponseEntity` / HTTP responses | 4 | Implemented `404 Not Found` for an unknown code and a `302 Found` response with a `Location` header for a redirect. |
-| In-memory maps | 4 | Implemented duplicate lookup, collision-safe code generation, insertion, and reverse lookup with two `HashMap`s. |
+| In-memory maps | 4 | Implemented duplicate lookup, collision-safe code generation, insertion, and reverse lookup with two `HashMap`s; understands that maps moved to the shared service remain temporary. |
 | Validation | 0 | |
 | Spring Data JPA | 0 | |
 | Transactions | 0 | |
@@ -114,17 +114,17 @@ Beginner.
   `String` from binding its `url` property into a Java object.
 - In-memory storage: explain why `urlToShortCode` and `shortCodeToUrl` serve
   different lookup directions, and why controller-held maps disappear on restart.
-- Redirect routing: explain why a method in a controller annotated with
-  `@RequestMapping("/api")` is available beneath `/api`, even if its method
-  mapping starts with `/{shortCode}`.
+- Bean scope and lifetime: reinforce why both controllers receive the same
+  service bean in the current application context, while all map data is still
+  lost when that context is restarted.
+- Persistence motivation: explain why a database, rather than a different
+  controller or service object, is needed to retain mappings across restarts.
 
 ## Current Objective
 
-Begin the service-layer introduction: understand why request handling and
-shared URL-shortening state should not live in a controller, then create a
-Spring-managed `UrlShortenerService` and inject it into controllers using a
-constructor. Use that shared service to support the planned root-level
-`GET /{shortCode}` redirect route.
+Begin Phase 5 by connecting the limitation of in-memory service state to
+database persistence. First review the planned URL-mapping data model, then
+introduce Spring Data JPA, Hibernate, and MySQL incrementally.
 
 ## Session Notes — 2026-08-14
 
@@ -216,3 +216,26 @@ constructor. Use that shared service to support the planned root-level
   working redirect is `/api/{shortCode}`. The intended final public route is
   `/{shortCode}`, which will require separating shared URL logic from the API
   controller.
+
+## Session Notes - 2026-08-17 (Service Layer, IoC, and Dependency Injection)
+
+- Explained that direct `new UrlShortenerService()` in each controller would
+  create separate service objects with separate map instances. The learner
+  correctly identified this Java object-state issue before implementation.
+- Created `UrlShortenerService` with `@Service`; it owns the two maps,
+  duplicate lookup, collision-safe code generation, insertion, and original
+  URL lookup.
+- Corrected two map-direction mistakes during review: a duplicate long URL
+  must read `urlToShortCode`, while a short-code redirect lookup must read
+  `shortCodeToUrl`.
+- Injected the service through constructors in `HomeController` and
+  `RedirectController`. No controller creates the service with `new`.
+- Removed map state and URL-shortening business logic from `HomeController`.
+  It now binds the request, calls the service, and returns the short URL.
+- Created `RedirectController` without the `/api` class-level mapping and
+  moved redirect handling there. The public route is now `GET /{shortCode}`;
+  `POST /api/urls` returns a root-level short URL.
+- Manually verified the end-to-end flow and ran `./mvnw test` successfully.
+- Reinforce conventional Java naming during a later cleanup: package names
+  should be lowercase (`service`) and local variables lower camel case
+  (`originalUrl`).

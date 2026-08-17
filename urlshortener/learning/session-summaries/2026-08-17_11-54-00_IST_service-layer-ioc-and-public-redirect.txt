@@ -1,0 +1,123 @@
+Session summary - 2026-08-17 11:54:00 +05:30
+
+Project: URL Shortener (Java and Spring Boot learning project)
+
+Session outcome
+---------------
+Completed Phase 4: service layer, Spring IoC, Spring beans, and constructor
+dependency injection. The in-memory URL shortener still works end-to-end, but
+the shared URL-shortening state and business logic no longer live in a
+controller. Public short links now redirect from the root route.
+
+Exact stopping point
+--------------------
+The application was manually verified after the routing refactor, and
+`./mvnw test` passed with 1 test, 0 failures, and 0 errors. The next session
+starts Phase 5: persistence. Begin by explaining why restart loses mappings,
+then inspect the planned URL_MAPPING model before adding Spring Data JPA,
+Hibernate, or MySQL configuration.
+
+Implementation state
+--------------------
+- Server port: 1999.
+- HomeController retains the API base path `/api`.
+- GET /api returns the existing root API message.
+- GET /api/status returns the status message.
+- POST /api/urls consumes application/json, binds JSON to CreateUrlRequest,
+  passes the submitted original URL to UrlShortenerService, and returns
+  http://localhost:1999/{shortCode}.
+- RedirectController has no class-level `/api` mapping.
+- GET /{shortCode} asks UrlShortenerService for the original URL. A known code
+  returns HTTP 302 Found with a Location header; an unknown code returns 404.
+- UrlShortenerService owns urlToShortCode (original URL -> code) and
+  shortCodeToUrl (code -> original URL), duplicate handling, collision-safe
+  short-code generation, insertion, and lookup.
+- Both controllers receive the same service object from Spring through their
+  constructors. No controller creates the service with `new`.
+- Maps remain temporary. They are cleared when the Spring Boot application
+  stops or restarts and are not a concurrent-production storage design.
+
+What was learned
+----------------
+1. Why a service layer is needed
+   A controller's main responsibility is the HTTP boundary: receive a request,
+   read request data, call application logic, and form a response. The service
+   holds reusable application/business operations. This separation lets API
+   creation and public redirection share one implementation without copying
+   maps or URL-generation code.
+
+2. IoC and Spring beans
+   Inversion of Control means the application does not explicitly construct and
+   wire every collaborating object. Spring's application context discovers,
+   creates, and manages participating objects. Such managed objects are beans.
+   `@Service` is the appropriate stereotype for the URL-shortening service,
+   making it discoverable as a Spring component.
+
+3. Constructor dependency injection
+   A controller declares its required collaborator as a constructor parameter:
+   UrlShortenerService. Spring creates the controller and provides the matching
+   service bean. With one constructor, no `@Autowired` annotation is needed.
+   The final fields make the required dependency explicit and prevent later
+   reassignment.
+
+4. Java instance state and shared service state
+   The learner correctly reasoned that calling `new UrlShortenerService()` in
+   each controller would create two Java objects. Each object would own separate
+   HashMap instances, so an API-created mapping would not be visible to the
+   redirect controller. Constructor injection instead gives both controllers
+   Spring's shared service bean in this application context.
+
+5. Bidirectional map direction
+   For duplicate creation, the long original URL is the key, so use:
+   urlToShortCode.get(originalUrl).
+   For redirect lookup, the short code is the key, so use:
+   shortCodeToUrl.get(shortCode).
+   Two reversed lookup attempts were found during review and corrected. They
+   compiled because both keys and values are Strings, demonstrating that code
+   compiling does not guarantee correct data semantics.
+
+6. Route separation
+   A method in a controller annotated with @RequestMapping("/api") always has
+   `/api` in its effective route. Therefore `GET /api/{shortCode}` could not be
+   the desired public `GET /{shortCode}` route. Moving the redirect handler to
+   a separate controller without that class-level mapping produced the intended
+   API/public-route separation.
+
+Corrections and conventions noted
+---------------------------------
+- A duplicate-original-URL lookup must query urlToShortCode, not
+  shortCodeToUrl.
+- A short-code redirect lookup must query shortCodeToUrl, not urlToShortCode.
+- Java package names conventionally use lowercase: `service`, rather than the
+  current `Service` package. This is a later non-functional cleanup.
+- Local variables conventionally use lower camel case: `originalUrl`, rather
+  than `OriginalUrl`.
+- The existing automated test only proves that the Spring application context
+  starts. Endpoint and service behavior still need dedicated tests in a later
+  testing phase.
+
+Next learning objective
+-----------------------
+Move from temporary process-memory storage to durable persistence, gradually:
+1. Explain why a HashMap is erased by restart but a database is not.
+2. Review the URL_MAPPING model: id, link_key, original_url, created_at.
+3. Learn what JPA, Hibernate, Spring Data JPA, an entity, and a repository each
+   do before replacing any map logic.
+4. Configure MySQL and persistence incrementally, then migrate service methods
+   to a repository with tests.
+
+Focused official reading
+------------------------
+- Spring IoC container and beans (definition of IoC, DI, and Spring-managed
+  beans):
+  https://docs.spring.io/spring-framework/reference/core/beans/introduction.html
+- Dependency injection with collaborators; constructor injection is the Spring
+  team's preferred general approach:
+  https://docs.spring.io/spring-framework/reference/6.2/core/beans/dependencies/factory-collaborators.html
+- Component scanning and stereotypes; @Service is a specialization of
+  @Component:
+  https://docs.spring.io/spring-framework/reference/core/beans/classpath-scanning.html
+- Spring Boot SQL/JPA overview; entity scanning and Spring Data repositories:
+  https://docs.spring.io/spring-boot/reference/data/sql.html
+- Spring Data JPA reference entry point:
+  https://docs.spring.io/spring-data/jpa/reference/

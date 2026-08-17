@@ -206,3 +206,68 @@ learn IoC, Spring beans, and constructor dependency injection by extracting
 the shared maps and URL-shortening operations into a `UrlShortenerService`.
 Then create a separate root-level redirect controller so the final route can
 be `GET /{shortCode}` while API routes remain under `/api`.
+
+### Phase 4 Completion — Service Layer, IoC, and Constructor Injection
+
+- Introduced IoC as Spring taking responsibility for creating and connecting
+  application objects. Defined a bean as an object managed by Spring's
+  application context.
+- The learner correctly explained why `new UrlShortenerService()` in each
+  controller would be incorrect: each Java object has separate instance fields,
+  so the two map pairs would not be shared.
+- Created the Spring-managed `@Service` class `UrlShortenerService`.
+- Moved `urlToShortCode`, `shortCodeToUrl`, duplicate handling, unique code
+  generation, mapping insertion, and short-code lookup from the controller to
+  the service.
+- Found and corrected a lookup-direction bug while reviewing the service:
+  `urlToShortCode.get(originalUrl)` returns the existing code for a duplicate;
+  `shortCodeToUrl.get(shortCode)` returns the original URL for redirection.
+- Added constructor injection to `HomeController` and `RedirectController`.
+  Spring supplies the shared service bean; no `new UrlShortenerService()` is
+  used in either controller.
+- Simplified `HomeController` so it handles the HTTP request/response boundary
+  and delegates URL-shortening work to the service.
+- Created `RedirectController` with `GET /{shortCode}`. It delegates lookup to
+  the service and returns `302 Found` with `Location` or `404 Not Found`.
+- Removed the temporary `/api/{shortCode}` redirect endpoint. `POST /api/urls`
+  now returns `http://localhost:1999/{shortCode}`.
+- Manually verified a create-then-redirect flow and ran `./mvnw test` after
+  the refactor; 1 context-load test passed with 0 failures.
+
+### Concepts Learned
+
+- IoC: Spring controls creation and assembly of managed application objects.
+- Beans: `@Service` is a component stereotype that makes the service eligible
+  for component scanning and Spring management.
+- Constructor injection: a constructor states the object's required
+  collaborator; Spring supplies the matching bean when creating the controller.
+- Service-layer responsibility: controllers deal with HTTP details while the
+  service holds reusable URL-shortening behavior and shared in-memory state.
+- Architectural routing: an API controller mapped to `/api` cannot expose a
+  root-level endpoint; a separate controller without that base mapping can.
+
+### Concepts to Reinforce
+
+- Spring's service bean is shared in this application context, but its ordinary
+  in-memory `HashMap` data still vanishes whenever the application restarts.
+- A database provides durable storage beyond an application's process lifetime;
+  creating another controller or Java object does not.
+- The existing test proves only that the Spring context starts. Endpoint and
+  service behavior do not yet have automated tests.
+
+### Current Implementation State
+
+- Port remains `1999`.
+- `HomeController`: `GET /api`, `GET /api/status`, and JSON-consuming
+  `POST /api/urls`.
+- `RedirectController`: `GET /{shortCode}`, returning `302 Found` plus
+  `Location` for known codes and `404 Not Found` otherwise.
+- `UrlShortenerService`: one shared Spring-managed owner of two in-memory maps
+  and create/lookup operations.
+- The maps reset on restart and are not intended for concurrent production use.
+
+### Exact Stopping Point and Next Learning Objective
+
+Phase 4 is complete. Next session starts Phase 5 by explaining why application
+restart loses the mappings, reviewing the planned `URL_MAPPING` model, and
+then introducing Spring Data JPA, Hibernate, and MySQL one concept at a time.

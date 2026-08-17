@@ -132,8 +132,30 @@ and dependency injection.
 
 ### Status
 
-Temporary. The next refactor will move URL-shortening logic into a shared
-service and restore the accepted public redirect route, `GET /{shortCode}`.
+Superseded by ADR-009.
+
+---
+
+## ADR-009 - Shared In-Memory URL Shortener Service and Public Redirect Route
+
+### Decision
+
+Use one Spring-managed `UrlShortenerService` to own the temporary in-memory
+maps and URL-shortening operations. Inject it through constructors into the
+API and redirect controllers. Expose redirects at `GET /{shortCode}` through
+a separate controller without the `/api` base path.
+
+### Reason
+
+Creation and redirection require the same mappings but have different HTTP
+responsibilities. A shared service avoids duplicate state and business logic,
+keeps controllers focused on request/response handling, and preserves the API
+prefix while making short links publicly accessible at the root.
+
+### Status
+
+Accepted for the in-memory learning implementation. A repository and database
+will replace the map storage in the persistence phase.
 
 ---
 
