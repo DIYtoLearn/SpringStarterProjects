@@ -1,0 +1,106 @@
+URL Shortener Learning Session
+Date and time: 2026-08-21 03:02 IST
+
+What we explored / learned
+==========================
+
+1. Replacing the active in-memory service state
+
+The learner independently advanced the project from the earlier entity and
+repository setup. `UrlShortenerService` now receives a `UrlMappingRepository`
+through constructor injection. The active create path no longer uses its two
+maps: it finds an existing mapping by `originalUrl`, returns the existing
+`linkKey` when present, generates a collision-free candidate, constructs a
+`UrlMapping`, and calls repository `save(...)`. MySQL therefore owns mappings
+instead of the Spring Boot JVM heap.
+
+The previous `HashMap` code remains commented in the service at the learner's
+request as a Phase 3 reference. It does not execute and has no effect on the
+database-backed flow.
+
+2. Collision checks and derived repository methods
+
+The repository gained `existsByLinkKey(String linkKey)`. This is better suited
+to short-code generation than loading a whole entity when the service only
+needs a yes/no answer. A first learner-led version checked a generated code
+outside the retry loop, then generated another code inside it. That would keep
+testing the original result: if the first code existed the loop could never end;
+if it did not, a later candidate could escape without being checked.
+
+The corrected `do...while` sequence generates one candidate and immediately
+uses `existsByLinkKey` for that same candidate before deciding whether to repeat.
+This preserves the earlier in-memory collision strategy, with the database now
+providing the lookup.
+
+3. Saving and redirecting through JPA
+
+`new UrlMapping(shortCode, originalUrl)` creates the Java object to save.
+`urlMappingRepository.save(urlMapping)` persists it through Spring Data JPA and
+Hibernate; the database creates the ID and the `created_at` default. The service
+does not need the returned saved entity yet because the public response only
+needs the generated short code.
+
+The redirect lookup became:
+
+`findByLinkKey(shortCode).map(UrlMapping::getOriginalUrl).orElse(null)`.
+
+`findByLinkKey` returns `Optional<UrlMapping>`. `Optional.map` applies the
+method reference only if a mapping is present, transforming that type into
+`Optional<String>`. `UrlMapping::getOriginalUrl` is shorthand for a lambda that
+receives a mapping and calls `getOriginalUrl()` on it. Finally, `orElse(null)`
+returns the URL or retains the service's existing missing-code contract. The
+controller still converts that `null` into `404 Not Found`. This `map` is an
+Optional transformation operation, not the old `HashMap` data structure.
+
+4. Manual persistence verification
+
+The learner manually tested all four active API endpoints. A created long URL
+and short code remained available after restarting the application twice. A
+duplicate submission returned the same existing short code and left one row in
+MySQL. An unknown short code returned `404`. These checks prove the normal
+end-to-end persistence behavior, but they are not automated tests; future
+changes could still break it without a repeatable test suite.
+
+5. Current implementation and exact stopping point
+
+Phase 5 is still in progress. The entity, repository, and active service
+replacement are complete at a manually verified level. The next exact task is
+to design tests for `createOrGetShortCode`: first the existing-URL path, then
+the new-URL path. The learner should decide which repository calls happen in
+each case and whether `save(...)` should occur before writing Mockito tests.
+
+Official reading, explained in plain language
+==============================================
+
+1. Spring Data JPA: Persisting Entities
+
+URL: https://docs.spring.io/spring-data/jpa/reference/jpa/entity-persistence.html
+
+Read "Saving Entities" and "Entity State-detection Strategies". This directly
+explains what repository `save(...)` does with the new `UrlMapping`: a new
+entity is persisted, while an existing one may be merged. Focus on how the
+identifier helps Spring Data decide whether an entity is new. Ignore custom
+`Persistable` implementations and advanced state-detection alternatives for now.
+
+2. Spring Data JPA: Query Creation
+
+URL: https://docs.spring.io/spring-data/jpa/reference/jpa/query-methods.html
+
+Read "Query Creation" and the supported-keywords table. It explains why
+`findByOriginalUrl`, `findByLinkKey`, and `existsByLinkKey` need no handwritten
+SQL: Spring Data derives queries from the Java property names in the method.
+Concentrate on `findBy` and the idea of property-name matching. Ignore custom
+`@Query`, native queries, sorting, paging, SpEL, and query rewriting.
+
+3. Java `Optional`
+
+URL: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Optional.html
+
+Read the method descriptions for `map` and `orElse`. They explain the redirect
+chain explored today: `map` changes the contained value only when present, and
+`orElse` supplies a fallback when it is absent. Before reading, trace the type
+change from `Optional<UrlMapping>` to `Optional<String>` to `String`. Ignore
+the stream-related methods and less common combinations such as `or`, `filter`,
+and `flatMap` until this basic chain feels natural.
+
+Next session: State the expected repository calls and return values for the existing-URL and new-URL service paths, then begin the first Mockito service test.

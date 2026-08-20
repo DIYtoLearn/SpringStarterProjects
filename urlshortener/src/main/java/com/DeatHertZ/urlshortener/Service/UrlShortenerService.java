@@ -1,21 +1,34 @@
 package com.DeatHertZ.urlshortener.Service;
 
+import com.DeatHertZ.urlshortener.entity.UrlMapping;
+import com.DeatHertZ.urlshortener.repository.UrlMappingRepository;
 import org.springframework.stereotype.Service;
-import java.util.HashMap;
-import java.util.Map;
+//import java.util.HashMap;
+//import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class UrlShortenerService {
 
-    private final Map<String, String> urlToShortCode = new HashMap<>(); // Key - Long ULR and value - shortCode
-    private final Map<String, String> shortCodeToUrl = new HashMap<>(); // Key - shortCode and value - Long URL
+    private final UrlMappingRepository urlMappingRepository;
+    public UrlShortenerService(UrlMappingRepository urlMappingRepository)
+    {
+        this.urlMappingRepository = urlMappingRepository;
+    }
 
-    public String createOrGetShortCode(String originalUrl) {
-        // map and generation logic
+//    private final Map<String, String> urlToShortCode = new HashMap<>(); // Key - Long ULR and value - shortCode
+//    private final Map<String, String> shortCodeToUrl = new HashMap<>(); // Key - shortCode and value - Long URL
+
+    public String createOrGetShortCode(String originalUrl) {   // Map Store and generation logic
 
         // Long URL already present
-        if(urlToShortCode.containsKey(originalUrl))
-            return urlToShortCode.get(originalUrl);
+//        if(urlToShortCode.containsKey(originalUrl)) // Old Logic for Long URL exist check !
+//            return urlToShortCode.get(originalUrl);
+
+        Optional<UrlMapping> existingMapping = urlMappingRepository.findByOriginalUrl(originalUrl);
+        if(existingMapping.isPresent()){
+            return existingMapping.get().getLinkKey();
+        }
 
         String shortCode;
         GenerateShortCode gsc = new GenerateShortCode();
@@ -24,17 +37,24 @@ public class UrlShortenerService {
         do {
             gsc.generate();
             shortCode = gsc.getShortCode().toString();
-        } while (shortCodeToUrl.containsKey(shortCode));
+        } while (urlMappingRepository.existsByLinkKey(shortCode));
 
-        // Map the shortCode and Long URL to both the maps
-        shortCodeToUrl.put(shortCode, originalUrl);
-        urlToShortCode.put(originalUrl, shortCode);
-        System.out.println("Current Map States \n"+urlToShortCode+" \n"+shortCodeToUrl); // print to check the current values
+        // Map the shortCode and Long URL to both the maps // THE OLDER LOGIC FOR IN MEMORY MAPS STORING THE DATA
+//        shortCodeToUrl.put(shortCode, originalUrl);
+//        urlToShortCode.put(originalUrl, shortCode);
+//        System.out.println("Current Map States \n"+urlToShortCode+" \n"+shortCodeToUrl); // print to check the current values
+
+        UrlMapping urlMapping = new UrlMapping(shortCode, originalUrl);
+        urlMappingRepository.save(urlMapping); // The database will generate id and created_at;
+        // the service only needs to return shortCode.
+
         return shortCode;
     }
 
     public String findOriginalUrl(String shortCode) {  // lookup logic
         // Return the Original URL for the Redirection or return Null in case no matching short code found
-        return shortCodeToUrl.get(shortCode);
+        return urlMappingRepository.findByLinkKey(shortCode)
+                .map(UrlMapping::getOriginalUrl)
+                .orElse(null);
     }
 }

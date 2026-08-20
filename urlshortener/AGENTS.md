@@ -236,15 +236,6 @@ Before finishing the End-of-Session Protocol, verify that:
 * the reading references are relevant to this session
 * the exact stopping point and next objective are recorded
 
-After all updates are complete, give me a concise terminal summary containing:
-
-1. What I learned
-2. What I struggled with or should reinforce
-3. Exactly where we stopped
-4. What I should start with next session
-5. Which learning files were changed
-6. The path of the generated session-summary file
-
 ---
 
 ## Project

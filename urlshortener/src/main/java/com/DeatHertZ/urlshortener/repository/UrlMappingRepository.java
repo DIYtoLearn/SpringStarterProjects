@@ -9,4 +9,6 @@ public interface UrlMappingRepository extends JpaRepository<UrlMapping, Long> {
     Optional<UrlMapping> findByOriginalUrl(String originalUrl);
     Optional<UrlMapping> findByLinkKey(String linkKey);
 
+    boolean existsByLinkKey(String linkKey);
+
 }

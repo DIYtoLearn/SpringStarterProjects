@@ -95,11 +95,12 @@ Beginner.
 | `ResponseEntity` / HTTP responses | 4 | Implemented `404 Not Found` for an unknown code and a `302 Found` response with a `Location` header for a redirect. |
 | In-memory maps | 4 | Implemented duplicate lookup, collision-safe code generation, insertion, and reverse lookup with two `HashMap`s; understands that maps moved to the shared service remain temporary. |
 | Validation | 0 | |
-| Spring Data JPA | 4 | With guidance, added the JPA starter, mapped `UrlMapping` to MySQL, and declared a `JpaRepository` with two derived `Optional` lookup methods. |
-| JPA entity mapping | 4 | Can map fields to `url_mapping` columns using `@Entity`, `@Table`, `@Id`, `@GeneratedValue`, and `@Column`; needs practice connecting the mapping to actual save/read operations. |
+| Spring Data JPA | 4 | Replaced the service's active map operations with repository duplicate lookup, short-code collision checks, entity saving, and redirect lookup; manually verified persistence across two application restarts. |
+| JPA entity mapping | 4 | Can map fields to `url_mapping` columns using `@Entity`, `@Table`, `@Id`, `@GeneratedValue`, and `@Column`; constructed and saved `UrlMapping` entities through the service. |
 | MySQL datasource configuration | 3 | Configured a JDBC URL and username in `application.properties`; keeps the password in an IntelliJ environment variable resolved through a property placeholder. |
 | Hibernate schema generation | 3 | Observed `spring.jpa.hibernate.ddl-auto=update` create the table and add columns as the entity was developed. |
-| Spring Data derived queries | 4 | Declared `findByOriginalUrl` and `findByLinkKey`; understands that method names use Java property names, not SQL column names. |
+| Spring Data derived queries | 4 | Declared and used `findByOriginalUrl`, `findByLinkKey`, and `existsByLinkKey`; understands that method names use Java property names, not SQL column names. |
+| `Optional` mapping and method references | 2 | Explored how `Optional<UrlMapping>.map(UrlMapping::getOriginalUrl).orElse(null)` transforms a present entity into a `String` while preserving the current `404` behavior for a missing code. |
 | Transactions | 0 | |
 
 ## Recurring Mistakes
@@ -133,14 +134,16 @@ Beginner.
   properties.
 - Database-generated timestamps: reinforce why `insertable = false` lets
   MySQL's `DEFAULT CURRENT_TIMESTAMP` supply `created_at`.
+- Repository persistence testing: distinguish the manually verified API flow
+  from automated tests that prove the duplicate and new-mapping service paths
+  repeatedly and safely.
 
 ## Current Objective
 
-Continue Phase 5 by completing the repository interface with
-`existsByLinkKey(String linkKey)`, then replace the two in-memory map operations
-inside `UrlShortenerService` incrementally with repository lookup, collision
-check, and save operations. Do not change the controllers until the service
-methods work with MySQL and are tested.
+Continue Phase 5 by designing and adding the first automated tests for the
+database-backed service. Begin with the existing-URL path and the new-URL path;
+then decide what should be mocked and what should use a real test database.
+The production API has already been manually verified across restarts.
 
 ## Session Notes — 2026-08-14
 
@@ -302,3 +305,33 @@ methods work with MySQL and are tested.
   added the derived methods `findByOriginalUrl` and `findByLinkKey`, both
   returning `Optional<UrlMapping>`. The planned `existsByLinkKey` method was
   discussed but had not yet been added when the session ended.
+
+## Session Notes - 2026-08-21 (Phase 5: Repository-Backed Service)
+
+- Reviewed learner-led changes to the persistence implementation. Added
+  `existsByLinkKey` to the repository and constructor-injected the repository
+  into `UrlShortenerService`.
+- Replaced the active duplicate lookup with `findByOriginalUrl`. When an
+  `Optional<UrlMapping>` is present, the service returns its stored `linkKey`.
+- Fixed an important collision-loop error during review. A code existence result
+  must be checked for the same candidate produced in that loop iteration;
+  retaining one `Optional` outside the loop would either fail to check a later
+  candidate or loop forever. The final loop generates a candidate and uses
+  `existsByLinkKey(shortCode)` in its condition.
+- Created `new UrlMapping(shortCode, originalUrl)` and passed it to repository
+  `save(...)`, replacing the active map insertion. The database supplies the
+  generated ID and creation timestamp.
+- Replaced redirect lookup with `findByLinkKey(shortCode)` followed by
+  `.map(UrlMapping::getOriginalUrl).orElse(null)`. This chain changes
+  `Optional<UrlMapping>` into `Optional<String>`, then preserves the current
+  controller contract by returning `null` when the code is missing; the
+  controller consequently continues to return `404`.
+- Manually tested all current endpoints, repeated the application restart twice,
+  and confirmed that a previously created mapping persists in MySQL. Also
+  verified that duplicate URL submission returns the existing code, only one row
+  remains, and an unknown short code returns `404`.
+- The learner chose to retain the old in-memory map code as comments for
+  learning reference. These comments are inactive and do not participate in the
+  running implementation; the repository is now the active data source.
+- No automated tests were added during this session. The immediate next task is
+  to design service tests for the existing-URL and new-URL paths.

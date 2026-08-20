@@ -796,10 +796,14 @@ Completed so far:
   schema during local development;
 - created `UrlMappingRepository` with derived lookups by original URL and link
   key.
+- replaced the active `UrlShortenerService` map lookup, collision check,
+  insertion, and redirect lookup with repository operations;
+- manually verified that mappings, duplicate behavior, redirects, and unknown
+  codes work correctly and that saved rows survive two application restarts.
 
-Next: add the collision existence query, then refactor the service from its two
-in-memory maps to repository operations and verify that created mappings remain
-available after an application restart.
+Next: add automated tests for the existing-mapping and new-mapping service
+paths. Do not call Phase 5 complete until those behaviors are tested without
+depending solely on a manual DBeaver/API check.
 
 Introduce:
 
@@ -1003,19 +1007,16 @@ Do not immediately replace the student's implementation with a complete solution
 
 # 20. Immediate Next Step
 
-The project has completed the in-memory implementation and the service-layer
-refactor. `UrlShortenerService` is the shared Spring-managed owner of the two
-maps and the create/lookup operations. `HomeController` handles API creation
-under `/api`, and `RedirectController` handles `GET /{shortCode}`.
+The active `UrlShortenerService` implementation now persists and retrieves URL
+mappings through `UrlMappingRepository`; manual API checks confirmed that MySQL
+rows survive application restarts. The old map code is retained only as
+commented learning reference.
 
 Next learning steps:
 
-1. Add `boolean existsByLinkKey(String linkKey)` to `UrlMappingRepository` and
-   explain why it answers the collision loop's yes/no question without loading
-   an entire entity.
-2. Add the smallest useful constructors/getters to `UrlMapping`, then refactor
-   one `UrlShortenerService` operation at a time from `HashMap` access to
-   repository access.
-3. Save a mapping through JPA, restart the application, and prove from MySQL
-   that the mapping persists.
-4. Add tests before treating the persistence replacement as complete.
+1. Describe expected repository interactions for an existing URL and a new URL.
+2. Introduce Mockito and write focused unit tests for those two service paths.
+3. Decide separately whether a repository integration test should use a
+dedicated MySQL test database.
+4. Only after tests are in place, mark the Phase 5 persistence replacement
+complete and move to the DTO phase.

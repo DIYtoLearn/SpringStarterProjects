@@ -6,6 +6,16 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "url_mapping")
 public class UrlMapping {
+
+    public UrlMapping(){
+    }
+
+    public UrlMapping(String linkKey, String originalUrl)
+    {
+        this.linkKey = linkKey;
+        this.originalUrl = originalUrl;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,4 +29,11 @@ public class UrlMapping {
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
 
+    public String getLinkKey() {
+        return linkKey;
+    }
+
+    public String getOriginalUrl() {
+        return originalUrl;
+    }
 }

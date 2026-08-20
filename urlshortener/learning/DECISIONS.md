@@ -192,6 +192,34 @@ database-level original-URL uniqueness decision are deferred.
 
 ---
 
+## ADR-011 - Repository-Backed URL Shortening Service
+
+### Decision
+
+`UrlShortenerService` now uses the injected `UrlMappingRepository` as its active
+storage mechanism:
+
+- `findByOriginalUrl` returns an existing short code for a duplicate submission;
+- `existsByLinkKey` checks each newly generated short-code candidate;
+- `save(new UrlMapping(...))` persists a new mapping;
+- `findByLinkKey` resolves the original URL for the redirect path.
+
+The old two-map implementation remains commented in the service at the
+learner's request as a Phase 3 learning reference, but it is not active.
+
+### Reason
+
+This preserves the current controller contracts while replacing temporary JVM
+heap state with MySQL rows. It also retains idempotent duplicate behavior and
+the collision-retry strategy in their repository-backed equivalents.
+
+### Status
+
+Accepted and manually verified across application restarts. Automated tests are
+still required before Phase 5 is considered complete.
+
+---
+
 ## Open Decisions
 
 Decisions that have not yet been finalized should be recorded here
