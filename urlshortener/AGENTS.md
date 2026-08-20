@@ -95,20 +95,158 @@ say goodbye.
 First:
 
 1. Review what we accomplished during the session.
-2. Identify concepts I learned.
-3. Identify misconceptions or mistakes.
-4. Identify concepts that need reinforcement.
-5. Identify the current implementation state.
+2. Identify the concepts I learned or explored.
+3. Identify misconceptions, mistakes, or incorrect assumptions that appeared.
+4. Identify concepts that still need reinforcement.
+5. Identify the current implementation state of the project.
 6. Identify the exact next learning objective.
-7. Update the appropriate files under `learning/`.
-8. Do not modify application code unless explicitly requested.
-9. Make a note of where Exactly where we stopped
-10. Create a dated and timed text summary under `learning/session-summaries/`
-    covering the session's topics, with official documentation or links to easy to understand reading references form the web
-    for later reading related to current session.
+7. Update the appropriate persistent learning files under `learning/`:
 
-After updating the learning state, provide a concise session summary
-and tell me what I should start with next time.
+    * `learning/LEARNING.md`
+    * `learning/PROGRESS.md`
+    * `learning/DECISIONS.md`
+    * `learning/ROADMAP.md`
+8. Do not modify application code unless explicitly requested.
+9. Record exactly where we stopped so that a future session can continue
+   without depending on the previous Codex conversation.
+
+### Session Summary File
+
+10. Create a dated and timed plain-text session summary under:
+
+    `learning/session-summaries/`
+
+    Create the directory if it does not already exist.
+
+    Use this filename format:
+
+    `YYYY-MM-DD_HHmm_IST.txt`
+
+    Example:
+
+    `2026-08-15_0307_IST.txt`
+
+11. The text file must begin with:
+
+    `URL Shortener Learning Session`
+
+    followed by:
+
+    `Date and time: YYYY-MM-DD HH:mm IST`
+
+12. The session summary must contain exactly two major learning sections:
+
+    `What we explored / learned`
+    `==========================`
+
+    and
+
+    `Official reading, explained in plain language`
+    `==============================================`
+
+### Section 1 — What we explored / learned
+
+For each meaningful topic covered during the session:
+
+* Give it a numbered subsection.
+* Explain what we actually explored, implemented, tested, observed, or discussed.
+* Explain the relevant Java, Spring Boot, HTTP, database, testing, or software
+  engineering concept in plain language.
+* Connect the explanation to what happened in this project during the session.
+* Include important experiments and their outcomes.
+* Include useful mistakes when they helped reveal how something works.
+* Explain WHY observed behavior occurred rather than only describing WHAT happened.
+* Preserve important distinctions that became clear during the session.
+* Do not claim that I learned something unless it was actually covered.
+* Do not turn the file into a generic Spring Boot tutorial.
+
+The purpose of this section is to make it possible for me to revisit the
+session later and understand what I discovered without needing the original
+Codex conversation.
+
+### Section 2 — Official reading, explained in plain language
+
+Find official documentation relevant ONLY to the concepts explored during
+this session.
+
+Prefer primary sources such as:
+
+* Spring Boot documentation
+* Spring Framework documentation
+* Java documentation
+* Maven documentation
+* MySQL documentation
+* JUnit documentation
+* other official documentation for technologies actually used in the session
+
+For every reading item:
+
+1. Give the topic name.
+2. Include the direct documentation URL.
+3. Explain in plain language WHY this reading is relevant to what I did today.
+4. Tell me which specific section, heading, paragraph, or concept I should
+   concentrate on.
+5. Explain the key idea I should try to understand before reading it.
+6. Explicitly tell me what parts I can safely ignore for now when the official
+   documentation contains material beyond my current learning level.
+
+Do not simply dump documentation links.
+
+Translate the important idea from the official documentation into language
+appropriate to my current Spring Boot knowledge level.
+
+Keep the reading focused enough that I could realistically review it after
+the session.
+
+Use non-official tutorials or articles only when:
+
+* the official documentation is unusually difficult to understand, AND
+* the additional source clearly improves comprehension.
+
+When using a non-official source, clearly label it as supplemental reading.
+Official documentation should remain the primary source whenever possible.
+
+### End of the text file
+
+After the two major sections, add a short final line:
+
+`Next session: <exact point to resume and immediate next objective>`
+
+This is not a third major section.
+
+It should state precisely where we stopped and what I should do first in the
+next session.
+
+### Quality Rules
+
+The session summary should:
+
+* be useful several weeks or months later
+* reflect what actually happened in the current session
+* remain understandable without access to the conversation
+* explain concepts rather than merely list activities
+* avoid unnecessary repetition
+* avoid documenting trivial terminal commands unless they taught something
+* use plain language while preserving correct technical terminology
+* stay focused on the current learning session
+
+Before finishing the End-of-Session Protocol, verify that:
+
+* the persistent learning files were updated where appropriate
+* the session-summary text file was created
+* the filename contains the correct local date and time
+* both required major sections are present
+* the reading references are relevant to this session
+* the exact stopping point and next objective are recorded
+
+After all updates are complete, give me a concise terminal summary containing:
+
+1. What I learned
+2. What I struggled with or should reinforce
+3. Exactly where we stopped
+4. What I should start with next session
+5. Which learning files were changed
+6. The path of the generated session-summary file
 
 ---
 

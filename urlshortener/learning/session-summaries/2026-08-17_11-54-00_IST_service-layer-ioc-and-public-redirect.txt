@@ -83,28 +83,6 @@ What was learned
    a separate controller without that class-level mapping produced the intended
    API/public-route separation.
 
-Corrections and conventions noted
----------------------------------
-- A duplicate-original-URL lookup must query urlToShortCode, not
-  shortCodeToUrl.
-- A short-code redirect lookup must query shortCodeToUrl, not urlToShortCode.
-- Java package names conventionally use lowercase: `service`, rather than the
-  current `Service` package. This is a later non-functional cleanup.
-- Local variables conventionally use lower camel case: `originalUrl`, rather
-  than `OriginalUrl`.
-- The existing automated test only proves that the Spring application context
-  starts. Endpoint and service behavior still need dedicated tests in a later
-  testing phase.
-
-Next learning objective
------------------------
-Move from temporary process-memory storage to durable persistence, gradually:
-1. Explain why a HashMap is erased by restart but a database is not.
-2. Review the URL_MAPPING model: id, link_key, original_url, created_at.
-3. Learn what JPA, Hibernate, Spring Data JPA, an entity, and a repository each
-   do before replacing any map logic.
-4. Configure MySQL and persistence incrementally, then migrate service methods
-   to a repository with tests.
 
 Focused official reading
 ------------------------

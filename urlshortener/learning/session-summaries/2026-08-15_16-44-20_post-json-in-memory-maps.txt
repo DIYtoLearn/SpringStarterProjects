@@ -39,27 +39,6 @@ Topics covered
 8. Two HashMaps were selected: urlToShortCode for duplicate lookup and
    shortCodeToUrl for later redirect lookup.
 
-Misconceptions or corrections
------------------------------
-- Checking whether a map is empty before every duplicate lookup is unnecessary;
-  lookup operations already safely report no match on an empty map.
-- The raw JSON document and the URL contained inside it are different strings.
-  The raw JSON must not become the duplicate-lookup key.
-- A 404 means no matching endpoint path; a 405 means the path exists but the
-  HTTP method is not permitted for it.
-
-Concepts needing reinforcement
-------------------------------
-- Binding JSON to a Java object with @RequestBody.
-- The roles of HTTP path, HTTP method, Content-Type, and response status.
-- Why controller-held in-memory maps reset when the application restarts.
-- The two directions of map lookup and where each will be used.
-
-Exact next learning objective
------------------------------
-Create a tiny request DTO representing the incoming JSON, bind it in
-createShortUrl with @RequestBody, and use its url field for a first lookup in
-urlToShortCode. Do this before implementing short-code generation or insertion.
 
 Later reading
 -------------

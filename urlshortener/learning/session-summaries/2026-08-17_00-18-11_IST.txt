@@ -66,36 +66,6 @@ Topics covered
    unknown code returns 404 Not Found. ResponseEntity<Void> is appropriate
    because this redirect response has no body.
 
-Misconceptions or corrections
------------------------------
-- Raw JSON text is not the same as the URL value inside it. A DTO is needed to
-  receive the url property as a clean Java String.
-- Checking one generated code a second time is not sufficient. Collisions must
-  be checked repeatedly until a free code exists.
-- Returning the destination URL with 200 OK is not a redirect. A redirect is a
-  3xx response with a Location header.
-- A method-level mapping is combined with the controller's class-level mapping.
-  Therefore the current redirect is /api/{shortCode}, not /{shortCode}.
-- In-memory maps are useful for this learning phase but their contents vanish
-  after restart; plain HashMap controller state also needs redesign before
-  concurrent production use.
-
-Concepts needing reinforcement
-------------------------------
-- Explain the end-to-end JSON binding path: HTTP body -> Spring message
-  converter -> request DTO -> getter.
-- Explain which map is used for duplicate creation versus redirect lookup.
-- Explain why a redirect does not fetch the destination server-side.
-- Explain why shared application logic belongs in a service rather than being
-  duplicated or retained in controllers.
-
-Exact next learning objective
------------------------------
-Learn the basics of IoC, beans, @Service, and constructor injection. Then
-extract the URL maps plus create/lookup operations into UrlShortenerService,
-inject that service into an API controller and a separate redirect controller,
-and expose the public redirect at GET /{shortCode} while retaining POST
-/api/urls.
 
 Later reading (official, focused references)
 --------------------------------------------
