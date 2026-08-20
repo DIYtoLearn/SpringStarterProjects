@@ -785,6 +785,22 @@ Status: Complete.
 
 ## Phase 5 — Database Persistence
 
+Status: **In progress**
+
+Completed so far:
+
+- created the local MySQL `urlshortener` database;
+- added Spring Data JPA and the MySQL JDBC driver;
+- configured a datasource using an environment-variable password placeholder;
+- mapped `UrlMapping` to `url_mapping` and observed Hibernate create/update the
+  schema during local development;
+- created `UrlMappingRepository` with derived lookups by original URL and link
+  key.
+
+Next: add the collision existence query, then refactor the service from its two
+in-memory maps to repository operations and verify that created mappings remain
+available after an application restart.
+
 Introduce:
 
 ```text
@@ -994,11 +1010,12 @@ under `/api`, and `RedirectController` handles `GET /{shortCode}`.
 
 Next learning steps:
 
-1. Explain why a mapping in a `HashMap` vanishes when the application restarts
-   and why a database solves that problem.
-2. Review the planned `URL_MAPPING` database model before adding dependencies.
-3. Introduce Spring Data JPA, Hibernate, MySQL configuration, an entity, and a
-   repository incrementally; do not generate the complete persistence layer at
-   once.
-4. Replace in-memory map operations only after the repository concepts are
-   understood and tested.
+1. Add `boolean existsByLinkKey(String linkKey)` to `UrlMappingRepository` and
+   explain why it answers the collision loop's yes/no question without loading
+   an entire entity.
+2. Add the smallest useful constructors/getters to `UrlMapping`, then refactor
+   one `UrlShortenerService` operation at a time from `HashMap` access to
+   repository access.
+3. Save a mapping through JPA, restart the application, and prove from MySQL
+   that the mapping persists.
+4. Add tests before treating the persistence replacement as complete.

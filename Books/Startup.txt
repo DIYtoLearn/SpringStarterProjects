@@ -1,7 +1,6 @@
 Read:
 - AGENTS.md
 - learning/LEARNING.md
-- learning/PROGRESS.md
 - learning/DECISIONS.md
 - learning/ROADMAP.md
 

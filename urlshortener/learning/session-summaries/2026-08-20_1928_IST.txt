@@ -1,0 +1,128 @@
+URL Shortener Learning Session
+Date and time: 2026-08-20 19:28 IST
+
+What we explored / learned
+==========================
+
+1. Why the in-memory implementation loses mappings
+
+The existing `UrlShortenerService` stores mappings in two `HashMap` instances.
+The learner explained that these maps live in the heap of the JVM running the
+Spring Boot process. When the application stops, the operating system releases
+that process memory, so neither map survives the next start. A MySQL database
+stores rows outside the Spring Boot JVM, so restarting the application does not
+remove its data. This is the reason the project needs persistence rather than a
+different controller or another service object.
+
+2. Planning the first database row
+
+We reviewed one URL mapping as `id`, `link_key`, `original_url`, and
+`created_at`. `id` is an internal auto-generated primary key. `link_key` is the
+public nine-character short code and has a database uniqueness rule. The
+original URL is stored as direct text rather than as the request JSON object.
+The project still treats input URLs exactly as supplied: for example,
+`https://example.com` and `https://example.com/` are separate strings for this
+MVP. The learner initially reasoned that application duplicate lookup makes an
+`original_url` uniqueness constraint unnecessary. We clarified that this works
+for ordinary sequential requests, while simultaneous requests can both observe
+an absent row before either saves. That concurrency protection is deliberately
+deferred; only `link_key` uniqueness is enforced in this first schema.
+
+3. Connecting Spring Boot to MySQL
+
+The learner created the local `urlshortener` database with DBeaver/MySQL, then
+added `spring-boot-starter-data-jpa` and the runtime MySQL JDBC driver to Maven.
+`./mvnw compile` succeeded. The datasource URL points to MySQL on port 3306,
+and the password is not stored in `application.properties`; Spring resolves the
+`URLSHORTENER_DB_PASSWORD` placeholder from an IntelliJ run-configuration
+environment variable. This showed how Spring Boot uses external configuration
+to build a database connection while keeping a secret out of the tracked file.
+
+4. Mapping a Java entity to a MySQL table
+
+We created `UrlMapping` in a lowercase `entity` package. `@Entity` marks it as
+a persistent Java object, `@Table(name = "url_mapping")` chooses the physical
+table name, and `@Id` plus `@GeneratedValue(strategy = GenerationType.IDENTITY)`
+maps the MySQL-generated primary key. `Long` was chosen instead of primitive
+`long` because a new, unsaved entity has no generated database ID yet and can
+therefore hold `null`.
+
+The learner added `linkKey` as a non-null, unique, maximum-nine-character
+column and `originalUrl` as a non-null column with initial capacity 2048.
+After each restart, Hibernate responded to `spring.jpa.hibernate.ddl-auto=update`
+by creating or updating the `url_mapping` table, which was inspected in DBeaver.
+This is useful for learning locally but is not the eventual production schema
+migration strategy.
+
+For `createdAt`, we corrected the initial idea of a Java `String`: a timestamp
+should be represented as a date/time value, so the entity uses
+`LocalDateTime`. The mapping asks MySQL for `TIMESTAMP DEFAULT CURRENT_TIMESTAMP`
+and uses `insertable = false` so Hibernate does not send a value during insert.
+`updatable = false` preserves the creation time after the row exists.
+
+5. JPA imports and the repository abstraction
+
+The first attempt imported `Jakarta` with an uppercase letter. Java packages are
+case-sensitive, and modern Spring Boot uses `jakarta.persistence`, not the
+older `javax.persistence` namespace. IntelliJ still could not initially resolve
+the correct import because its Maven model had not refreshed after the
+dependency change. Reloading the Maven project fixed the IDE classpath; no new
+dependency was required.
+
+We then created `UrlMappingRepository extends JpaRepository<UrlMapping, Long>`.
+The generic arguments say that the repository manages `UrlMapping` objects
+whose identifier type is `Long`. Spring Data JPA creates the implementation at
+runtime. Two derived queries were added: `findByOriginalUrl` for the duplicate
+URL path and `findByLinkKey` for the redirect path. Both return
+`Optional<UrlMapping>` so an absent database row is explicitly represented
+instead of being handled as an unguarded raw `null`. We discussed but did not
+yet add `existsByLinkKey`, which will replace the map-based collision check.
+
+Official reading, explained in plain language
+==============================================
+
+1. Spring Boot SQL database configuration
+
+URL: https://docs.spring.io/spring-boot/reference/data/sql.html
+
+Read the "Configure a DataSource" and "DataSource Configuration" sections.
+They directly explain the `spring.datasource.url`, `username`, and `password`
+properties used today. Concentrate on the idea that a JDBC URL and credentials
+allow Spring Boot to configure a `DataSource`, which is the application’s source
+of database connections. You can ignore embedded databases, JNDI, custom
+datasources, connection-pool tuning, and production-only alternatives for now.
+
+2. Jakarta Persistence `@Entity`
+
+URL: https://jakarta.ee/specifications/persistence/4.0/apidocs/jakarta.persistence/jakarta/persistence/entity
+
+Focus on the description of an entity, the no-argument-constructor requirement,
+and the requirement for an `@Id`. It explains why `UrlMapping` is a special Java
+class that represents persistent state, not merely a normal request DTO. Before
+reading, keep this question in mind: "Which Java fields should become database
+columns?" You can safely ignore entity inheritance, associations, fetching, and
+locking; this project currently maps one simple table only.
+
+3. Spring Data JPA derived query methods
+
+URL: https://docs.spring.io/spring-data/jpa/reference/jpa/query-methods.html
+
+Read "Query Creation" and the supported-keywords table. This is relevant to
+`findByOriginalUrl` and `findByLinkKey`: Spring parses the method name using the
+entity’s Java property names and creates a query without handwritten SQL. The
+key idea is that repository names describe the query intent, while entity
+annotations handle column-name translation. Ignore declared `@Query` methods,
+native queries, SpEL, pagination, sorting, and projections for now.
+
+4. MySQL automatic creation timestamps
+
+URL: https://dev.mysql.com/doc/refman/8.4/en/timestamp-initialization.html
+
+Read the opening explanation and the example with `TIMESTAMP DEFAULT
+CURRENT_TIMESTAMP` but no `ON UPDATE` clause. It matches the `created_at`
+decision: MySQL supplies a value for an inserted row and does not change it on
+later updates. Focus on the difference between a default value and an
+auto-update value. You can ignore strict SQL modes, fractional-second
+precision, and the legacy `explicit_defaults_for_timestamp` details for now.
+
+Next session: Add `existsByLinkKey` to `UrlMappingRepository`, then begin replacing the service’s duplicate lookup with repository access without changing the controllers yet.

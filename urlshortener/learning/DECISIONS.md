@@ -159,6 +159,39 @@ will replace the map storage in the persistence phase.
 
 ---
 
+## ADR-010 - Initial MySQL Persistence Mapping
+
+### Decision
+
+Use the local MySQL database `urlshortener` during the Phase 5 learning work.
+Map `UrlMapping` to the `url_mapping` table with these columns:
+
+- generated `id` primary key;
+- unique `link_key`, with a maximum length of nine characters;
+- non-null `original_url`, with an initial maximum length of 2048 characters;
+- `created_at`, supplied by MySQL through `DEFAULT CURRENT_TIMESTAMP`.
+
+Configure Spring Boot through `spring.datasource.*`; keep the password outside
+the tracked properties file in the `URLSHORTENER_DB_PASSWORD` environment
+variable. Use `spring.jpa.hibernate.ddl-auto=update` only for this local learning
+and development phase.
+
+### Reason
+
+The database must outlive the application JVM so mappings survive restarts.
+The entity mapping introduces JPA/Hibernate incrementally and lets the learner
+observe the relationship between Java fields and MySQL columns. The database
+enforces public short-code uniqueness; duplicate original-URL protection remains
+an application-level concern for now and will be revisited when concurrency is
+introduced.
+
+### Status
+
+Accepted for Phase 5 development. Production schema migrations and a
+database-level original-URL uniqueness decision are deferred.
+
+---
+
 ## Open Decisions
 
 Decisions that have not yet been finalized should be recorded here

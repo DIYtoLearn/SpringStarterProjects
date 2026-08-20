@@ -95,7 +95,11 @@ Beginner.
 | `ResponseEntity` / HTTP responses | 4 | Implemented `404 Not Found` for an unknown code and a `302 Found` response with a `Location` header for a redirect. |
 | In-memory maps | 4 | Implemented duplicate lookup, collision-safe code generation, insertion, and reverse lookup with two `HashMap`s; understands that maps moved to the shared service remain temporary. |
 | Validation | 0 | |
-| Spring Data JPA | 0 | |
+| Spring Data JPA | 4 | With guidance, added the JPA starter, mapped `UrlMapping` to MySQL, and declared a `JpaRepository` with two derived `Optional` lookup methods. |
+| JPA entity mapping | 4 | Can map fields to `url_mapping` columns using `@Entity`, `@Table`, `@Id`, `@GeneratedValue`, and `@Column`; needs practice connecting the mapping to actual save/read operations. |
+| MySQL datasource configuration | 3 | Configured a JDBC URL and username in `application.properties`; keeps the password in an IntelliJ environment variable resolved through a property placeholder. |
+| Hibernate schema generation | 3 | Observed `spring.jpa.hibernate.ddl-auto=update` create the table and add columns as the entity was developed. |
+| Spring Data derived queries | 4 | Declared `findByOriginalUrl` and `findByLinkKey`; understands that method names use Java property names, not SQL column names. |
 | Transactions | 0 | |
 
 ## Recurring Mistakes
@@ -119,12 +123,24 @@ Beginner.
   lost when that context is restarted.
 - Persistence motivation: explain why a database, rather than a different
   controller or service object, is needed to retain mappings across restarts.
+- JPA roles: distinguish the JPA mapping API, Hibernate as the provider that
+  performs the mapping work, and Spring Data JPA as the repository abstraction.
+- Entity and schema mapping: reinforce that the Java property `linkKey` can map
+  to the database column `link_key`, and that `ddl-auto=update` is a convenient
+  development tool rather than a production schema-migration strategy.
+- Repository methods: practise how `Optional<UrlMapping>` represents an absent
+  query result and how `findBy...` / `existsBy...` names are derived from entity
+  properties.
+- Database-generated timestamps: reinforce why `insertable = false` lets
+  MySQL's `DEFAULT CURRENT_TIMESTAMP` supply `created_at`.
 
 ## Current Objective
 
-Begin Phase 5 by connecting the limitation of in-memory service state to
-database persistence. First review the planned URL-mapping data model, then
-introduce Spring Data JPA, Hibernate, and MySQL incrementally.
+Continue Phase 5 by completing the repository interface with
+`existsByLinkKey(String linkKey)`, then replace the two in-memory map operations
+inside `UrlShortenerService` incrementally with repository lookup, collision
+check, and save operations. Do not change the controllers until the service
+methods work with MySQL and are tested.
 
 ## Session Notes — 2026-08-14
 
@@ -255,3 +271,34 @@ introduce Spring Data JPA, Hibernate, and MySQL incrementally.
   disappears when the application process restarts, while database state can
   outlive that process. No answer or implementation was completed before the
   session ended.
+
+## Session Notes - 2026-08-20 (Phase 5: MySQL, Entity Mapping, and Repository Setup)
+
+- Correctly explained that the service maps live in the JVM heap and disappear
+  when the Spring Boot process stops, whereas MySQL data is stored outside that
+  process and survives an application restart.
+- Reviewed the `URL_MAPPING` model: a generated internal `id`, unique
+  nine-character `link_key`, direct `original_url` storage, and a creation
+  timestamp. Clarified that an application-level duplicate check works for the
+  normal sequential path, while a database constraint would later protect the
+  same rule under concurrent requests.
+- Created the local `urlshortener` MySQL database. Added Spring Data JPA and the
+  MySQL JDBC driver to Maven, configured the datasource on port 3306, and kept
+  the password outside source control through the `URLSHORTENER_DB_PASSWORD`
+  environment-variable placeholder in the IntelliJ run configuration.
+- Learned that `String` is not an appropriate Java type for a timestamp; chose
+  `LocalDateTime` for the entity property and configured MySQL to provide the
+  initial value with `DEFAULT CURRENT_TIMESTAMP`.
+- Created `UrlMapping` as a JPA entity mapped to `url_mapping`. Incrementally
+  observed Hibernate create the table and add `id`, `link_key`, and
+  `original_url` after application restarts. The timestamp mapping was then
+  added with the database as its writer.
+- Encountered the modern `jakarta.persistence` namespace and an IntelliJ Maven
+  synchronization issue. The dependency was already correct; reloading the
+  Maven project made the annotations resolvable. Reinforce that Java package
+  names are case-sensitive and Spring Boot uses `jakarta.persistence`, not the
+  older `javax.persistence` package.
+- Created `UrlMappingRepository extends JpaRepository<UrlMapping, Long>` and
+  added the derived methods `findByOriginalUrl` and `findByLinkKey`, both
+  returning `Optional<UrlMapping>`. The planned `existsByLinkKey` method was
+  discussed but had not yet been added when the session ended.
