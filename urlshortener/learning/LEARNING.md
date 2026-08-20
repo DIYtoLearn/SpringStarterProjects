@@ -239,3 +239,19 @@ introduce Spring Data JPA, Hibernate, and MySQL incrementally.
 - Reinforce conventional Java naming during a later cleanup: package names
   should be lowercase (`service`) and local variables lower camel case
   (`originalUrl`).
+
+## Session Notes - 2026-08-20 (State Reconstruction and Persistence Setup)
+
+- Reconstructed the project state from the learning records, current source,
+  Maven configuration, and recent Git history. No application code or
+  configuration was changed during this session.
+- Confirmed that Phase 4 remains complete: the two controllers share one
+  Spring-managed `UrlShortenerService`, while its two `HashMap` instances are
+  still the only storage mechanism.
+- Confirmed that the project has not yet introduced a JPA dependency, a MySQL
+  driver, an entity, or a repository. The next work therefore remains the
+  first conceptual step of Phase 5 rather than an implementation task.
+- Began the persistence discussion by asking why state held by a service bean
+  disappears when the application process restarts, while database state can
+  outlive that process. No answer or implementation was completed before the
+  session ended.

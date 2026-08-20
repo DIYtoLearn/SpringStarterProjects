@@ -63,7 +63,6 @@ Use the following files as the project's persistent learning memory:
 
 - `learning/ROADMAP.md` — detailed learning and product plan
 - `learning/LEARNING.md` — current knowledge and learning state
-- `learning/PROGRESS.md` — chronological learning history
 - `learning/DECISIONS.md` — architectural and technical decisions
 
 Before giving project-level advice, consult the relevant learning files.
@@ -76,10 +75,9 @@ At the beginning of a new session:
 
 1. Read `AGENTS.md`.
 2. Read `learning/LEARNING.md`.
-3. Read `learning/PROGRESS.md`.
-4. Read `learning/DECISIONS.md`.
-5. Read `learning/ROADMAP.md`.
-6. Inspect the current repository state and recent Git changes.
+3. Read `learning/DECISIONS.md`. 
+4. Read `learning/ROADMAP.md`.
+5. Inspect the current repository state and recent Git changes.
 
 Use these sources to reconstruct where the previous session ended.
 
@@ -103,7 +101,6 @@ First:
 7. Update the appropriate persistent learning files under `learning/`:
 
     * `learning/LEARNING.md`
-    * `learning/PROGRESS.md`
     * `learning/DECISIONS.md`
     * `learning/ROADMAP.md`
 8. Do not modify application code unless explicitly requested.

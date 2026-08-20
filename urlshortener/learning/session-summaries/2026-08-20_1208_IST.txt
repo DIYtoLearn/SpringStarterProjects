@@ -1,0 +1,71 @@
+URL Shortener Learning Session
+Date and time: 2026-08-20 12:08 IST
+
+What we explored / learned
+==========================
+
+1. Reconstructing the actual project state
+
+This was a short continuity session rather than an implementation session.
+We read the learning records, inspected the current Git state, and compared
+the recorded Phase 4 outcome with the source code. The recorded state still
+matches the application: `HomeController` creates short URLs under `/api`,
+`RedirectController` resolves `GET /{shortCode}`, and both receive the same
+Spring-managed `UrlShortenerService` through constructor injection.
+
+The service currently owns two ordinary `HashMap` objects. One maps an
+original URL to its short code for duplicate detection; the other maps a short
+code to its original URL for redirects. This confirms that the program is
+functionally complete for the in-memory phase, but it does not yet have
+durable storage.
+
+2. The exact transition into persistence
+
+We confirmed that the Maven configuration still contains Spring Web MVC and
+test support only. There is no Spring Data JPA dependency, MySQL driver,
+entity, or repository. We therefore did not begin writing persistence code.
+
+The persistence discussion began with the key question: when the Spring Boot
+application stops, what happens to the service object and its maps, and why
+would a database behave differently? This distinction is the reason for the
+next architectural layer. A Spring service bean is shared while one
+application context is alive, but it is still an in-memory Java object. When
+the process ends, that object and its map entries end with it. A database runs
+as separate storage and retains committed records independently of the Java
+process.
+
+No answer to this question was given before the session ended, so persistence,
+JPA, Hibernate, MySQL configuration, the entity, and the repository remain
+unimplemented. The planned table is still `URL_MAPPING` with `id`, `link_key`,
+`original_url`, and `created_at`.
+
+Official reading, explained in plain language
+==============================================
+
+1. Spring Boot SQL Databases
+
+https://docs.spring.io/spring-boot/reference/data/sql.html
+
+Read the opening explanation of SQL database support, then the "JPA and
+Spring Data JPA" and "Entity Classes" subsections. This is relevant because
+the project has reached the point where `HashMap` storage must become durable
+database storage. Concentrate on the idea that JPA maps Java objects to rows
+in a relational database, Hibernate is a JPA implementation, and Spring Data
+JPA supplies repository support. Ignore JDBC alternatives, jOOQ, advanced
+DataSource customization, schema-initialization details, and Open EntityManager
+in View for now.
+
+2. Spring Data JPA repository core concepts
+
+https://docs.spring.io/spring-data/jpa/reference/repositories/core-concepts.html
+
+Read the introduction through the explanation of `Repository`, then notice
+that a repository is typed with the domain class and its identifier type. This
+will connect the planned URL mapping entity to the future repository layer.
+The important idea is that a repository is the boundary through which the
+service will save and find stored URL mappings; it replaces direct map access,
+not the controller. Ignore paging, sorting, query derivation details, and
+advanced repository variants until the basic entity and repository are in
+place.
+
+Next session: resume with the unanswered question about why the service maps vanish on restart, then review the `URL_MAPPING` fields before adding any persistence dependency or code.
