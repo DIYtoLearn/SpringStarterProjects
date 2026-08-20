@@ -1,0 +1,23 @@
+Read:
+- AGENTS.md
+- learning/LEARNING.md
+- learning/PROGRESS.md
+- learning/DECISIONS.md
+- learning/ROADMAP.md
+
+Do NOT read files under learning/session-summaries/ unless I explicitly ask you to.
+
+Inspect the current Git working tree and recent project state.
+
+Reconstruct my current learning state from the files above.
+
+Do not modify anything yet.
+
+Tell me:
+1. Exactly where we stopped in the previous session
+2. What I learned recently
+3. What concepts still need reinforcement
+4. What the current implementation state is
+5. What the next learning objective is
+
+Then continue tutoring me from that exact point.
