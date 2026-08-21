@@ -1014,9 +1014,14 @@ commented learning reference.
 
 Next learning steps:
 
-1. Describe expected repository interactions for an existing URL and a new URL.
-2. Introduce Mockito and write focused unit tests for those two service paths.
-3. Decide separately whether a repository integration test should use a
-dedicated MySQL test database.
-4. Only after tests are in place, mark the Phase 5 persistence replacement
-complete and move to the DTO phase.
+1. Complete the first Mockito unit test for an existing URL. It should stub
+   `findByOriginalUrl`, assert the existing link key is returned, and verify
+   that neither `existsByLinkKey` nor `save` is called.
+2. Review why the test uses a mock repository instead of real MySQL, and why
+   the internally constructed random `GenerateShortCode` makes the new-URL path
+   harder to test deterministically.
+3. Design and write the new-URL service-path test only after the existing-URL
+   test is understood and passing.
+4. Decide separately whether a repository integration test should use a
+   dedicated MySQL test database. Only after tests are in place, mark the Phase
+   5 persistence replacement complete and move to the DTO phase.

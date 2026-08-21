@@ -1,0 +1,88 @@
+URL Shortener Learning Session
+Date and time: 2026-08-21 12:28 IST
+
+What we explored / learned
+==========================
+
+1. Why Mockito is useful for the first service test
+
+We began Phase 5 automated testing by separating two kinds of confidence. The
+project had already been checked manually through the HTTP API and MySQL, but
+that requires a running application and database. A focused unit test can test
+one decision in `UrlShortenerService` without either of those external systems.
+
+Mockito creates a mock: a controlled substitute for `UrlMappingRepository`.
+The service receives that substitute through its existing constructor, exactly
+as it receives the real repository in production. The point is not to simulate
+MySQL; it is to control the repository's answer so the test can prove how the
+service reacts to it.
+
+2. Existing-URL service behavior
+
+We designed the first test around a submitted original URL that is already in
+the repository. The relevant lookup is
+`findByOriginalUrl(originalUrl)`. `findByLinkKey(...)` is different: it is used
+by the redirect flow when the application starts with a short code and needs
+the original URL.
+
+If the repository reports an existing `UrlMapping` whose link key is
+`abc123XYZ`, `createOrGetShortCode(...)` should return `abc123XYZ`. It must not
+create a new `UrlMapping`, generate a new code, call `existsByLinkKey(...)`, or
+call `save(...)`. This proves the duplicate-URL behavior remains idempotent.
+
+3. Arrange, Act, Assert and Mockito vocabulary
+
+The first test will have three parts. Arrange creates the mock repository,
+creates a representative existing `UrlMapping`, tells the mock what to return,
+and constructs the service with that mock. Act calls
+`createOrGetShortCode(...)`. Assert checks the returned value and confirms the
+expected repository interactions.
+
+`when(repository.findByOriginalUrl(url)).thenReturn(Optional.of(mapping))`
+does not issue a database query. It teaches the mock a rule: when that exact
+method call happens, return the prepared `Optional`. `verify(...)` checks after
+the act step that a call happened. `verify(repository, never())` checks that a
+call happened zero times. We had not yet assembled or run the complete test.
+
+4. Testability observation and current draft
+
+The new-URL path will be more difficult than the duplicate path because the
+service constructs `new GenerateShortCode()` internally. That generator is
+random and is not an injected dependency, so a unit test cannot currently
+choose its exact short-code value through the service constructor. We will
+explore that design issue after the existing-URL test is complete.
+
+The learner started an incomplete draft at
+`src/test/java/Service/UrlShortenerServiceTest.java`. It currently declares
+`package Service;`, which does not mirror the production service package. No
+application code was changed, and the incomplete test draft was deliberately
+left for the learner to finish.
+
+Official reading, explained in plain language
+==============================================
+
+1. Mockito API: creating mocks, stubbing, and verification
+
+URL: https://javadoc.io/static/org.mockito/mockito-core/5.17.0/org.mockito/org/mockito/Mockito.html
+
+This is relevant because the first service test will use `mock`, `when`,
+`thenReturn`, `verify`, and `never`. Concentrate on the introductory examples
+for stubbing and verifying behavior, plus the `never()` documentation. The key
+idea to take in before reading is: stubbing prepares an answer before the
+service runs, while verification checks the service's interaction afterward.
+Safely ignore strictness modes, ordered verification, timeouts, spies, static
+mocking, and advanced argument matchers for now.
+
+2. JUnit User Guide: writing a basic test and assertions
+
+URL: https://docs.junit.org/current/user-guide/
+
+This is relevant because Mockito does not replace JUnit: JUnit discovers the
+method marked with `@Test` and `assertEquals` checks the returned short code.
+Concentrate on the sections about test methods and assertions. The key idea is
+that a test runs ordinary Java code and fails when an assertion is false.
+Safely ignore parameterized tests, nested tests, extensions, conditional tests,
+parallel execution, and platform configuration until the first simple service
+test passes.
+
+Next session: Resume the existing-URL Mockito unit test. First move or recreate the draft in `src/test/java/com/DeatHertZ/urlshortener/Service/UrlShortenerServiceTest.java` with package `com.DeatHertZ.urlshortener.Service`, then complete its Arrange-Act-Assert sections and review any compilation errors before running it.

@@ -103,6 +103,8 @@ Beginner.
 | `Optional` mapping and method references | 2 | Explored how `Optional<UrlMapping>.map(UrlMapping::getOriginalUrl).orElse(null)` transforms a present entity into a `String` while preserving the current `404` behavior for a missing code. |
 | Transactions | 0 | |
 
+| Mockito unit-test basics | 1 | Learned the purpose of a mock repository, stubbing with `when(...).thenReturn(...)`, and interaction checks with `verify(...)` / `never()`; has not yet completed or run a test. |
+
 ## Recurring Mistakes
 
 - Distinguish Maven's production dependency from its test dependency.
@@ -137,13 +139,19 @@ Beginner.
 - Repository persistence testing: distinguish the manually verified API flow
   from automated tests that prove the duplicate and new-mapping service paths
   repeatedly and safely.
+- Mockito unit-test vocabulary: distinguish a mock from a real repository,
+  stubbing a pre-arranged answer from querying a database, and verifying an
+  interaction after the service method has run.
 
 ## Current Objective
 
-Continue Phase 5 by designing and adding the first automated tests for the
-database-backed service. Begin with the existing-URL path and the new-URL path;
-then decide what should be mocked and what should use a real test database.
-The production API has already been manually verified across restarts.
+Continue Phase 5 with the first Mockito unit test for the database-backed
+service. Resume the existing-URL path: first place the draft test in the
+matching `com.DeatHertZ.urlshortener.Service` test package, then complete its
+Arrange, Act, and Assert sections. It should return the stored link key and
+verify that neither collision checking nor saving occurs. Only after this test
+is understood and passing should the new-URL path and a separate real-database
+integration-test decision be explored.
 
 ## Session Notes — 2026-08-14
 
@@ -335,3 +343,36 @@ The production API has already been manually verified across restarts.
   running implementation; the repository is now the active data source.
 - No automated tests were added during this session. The immediate next task is
   to design service tests for the existing-URL and new-URL paths.
+
+## Session Notes - 2026-08-21 (Mockito Introduction and First Service-Test Draft)
+
+- Began introducing Mockito from first principles before attempting the first
+  automated service test. A Mockito mock is a controlled substitute for the
+  repository, so a unit test can exercise `UrlShortenerService` decisions
+  without starting Spring Boot or accessing MySQL.
+- Distinguished a unit test from the earlier manual API/database checks. The
+  unit test will use a fake `UrlMappingRepository`; it tests the service's
+  branching behavior, while a later integration test can separately verify
+  JPA/MySQL persistence.
+- Worked through the existing-original-URL path. The correct repository method
+  is `findByOriginalUrl(originalUrl)`, not `findByLinkKey(...)`, which belongs
+  to the redirect lookup path. When an existing `UrlMapping` is returned, the
+  service must return its `linkKey`, skip short-code generation and collision
+  checking, and never call `save(...)`.
+- Introduced the Arrange-Act-Assert test structure. In Arrange, create the
+  mock repository, construct a representative existing `UrlMapping`, configure
+  the mock with `when(...).thenReturn(Optional.of(...))`, and inject it into a
+  new service through the existing constructor. Act calls
+  `createOrGetShortCode(...)`. Assert checks the returned key and repository
+  interactions.
+- Clarified Mockito vocabulary: `when(...).thenReturn(...)` does not query a
+  fake database; it pre-programs the mock's answer for a particular method
+  call. `verify(...)` checks afterward that an expected call occurred, and
+  `verify(mock, never())` checks that an interaction did not occur.
+- Identified why the new-URL path will need further design: the service creates
+  `new GenerateShortCode()` internally, so its random result is not currently
+  supplied through a constructor dependency that a unit test can control.
+- The learner started an untracked, incomplete draft at
+  `src/test/java/Service/UrlShortenerServiceTest.java`. Its `package Service;`
+  declaration does not yet mirror the production package and the method body is
+  incomplete. It was intentionally left untouched for the learner to continue.

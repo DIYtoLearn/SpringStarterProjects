@@ -224,3 +224,8 @@ still required before Phase 5 is considered complete.
 
 Decisions that have not yet been finalized should be recorded here
 before implementation rather than invented by the AI.
+
+- Phase 5 testing scope: begin with Mockito unit tests that replace
+  `UrlMappingRepository` with a mock and verify service behavior. Whether and
+  how to add a JPA/MySQL integration test with a dedicated test database remains
+  undecided.
