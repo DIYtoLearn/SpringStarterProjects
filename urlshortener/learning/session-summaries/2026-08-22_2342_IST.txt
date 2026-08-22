@@ -1,0 +1,216 @@
+URL Shortener Learning Session
+Date and time: 2026-08-22 23:42 IST
+
+What we explored / learned
+==========================
+
+1. Mockito service tests: existing and new URL paths
+
+We completed the first two automated tests for the database-backed
+`UrlShortenerService`. Both tests use a Mockito mock of `UrlMappingRepository`,
+so the service can be tested without starting Spring Boot or connecting to
+MySQL. The mock is a runtime object that implements the repository interface;
+`when(...).thenReturn(...)` pre-arranges its answer and does not query a fake
+database.
+
+For an existing original URL, the mock returned `Optional.of(existingMapping)`.
+The test asserted the stored code was returned and used `verify(..., never())`
+to prove that the service did not check a candidate code or save a row. This
+demonstrates the idempotent early-return branch.
+
+For a new URL, the mock returned `Optional.empty()` for the original-URL
+lookup and `false` for `existsByLinkKey(anyString())`. `Optional.empty()` was
+important: returning `null` would have caused a `NullPointerException` when
+the service called `isPresent()`. The generated code is random, so the test did
+not predict its exact value. Instead, an `ArgumentCaptor<UrlMapping>` captured
+the object passed to `save(...)`; the test proved that its original URL matched
+the input and its link key matched the code returned by the service.
+
+The tests were then extended when the service began returning `ShortCodeResult`.
+They now also verify `isCreated()` is false for an existing mapping and true
+for a newly saved mapping. All three IntelliJ tests passed: both Mockito
+service tests and `UrlshortenerApplicationTests`.
+
+2. Unit tests, the Spring context test, and the local toolchain observation
+
+The Mockito tests are unit tests: they manually construct a real service and
+inject a mocked repository through its constructor. Spring does not create the
+service in those tests and MySQL is not contacted.
+
+`@SpringBootTest` in `UrlshortenerApplicationTests` is different. Its output
+showed Spring discovering the JPA repository, Hikari creating a MySQL
+connection, Hibernate detecting the MySQL dialect, and Tomcat starting on port
+1999. This proved that the configured application context can start with the
+local datasource environment variables available.
+
+The Codex terminal intermittently could not run Mockito because JDK 25 could
+not self-attach Byte Buddy's mock-maker agent. The same tests passed in
+IntelliJ. This was treated as a tooling/JDK-runner issue, not as evidence that
+the test assertions or service logic were wrong. Maven compilation did succeed
+after the final code changes.
+
+3. DTOs: separating API messages from database entities
+
+The original creation endpoint returned a raw short-URL string. We introduced
+`CreateUrlResponse` with `shortCode`, `shortUrl`, and `url`, and changed the
+controller to return that object. Because the class has getters and the
+controller is a `@RestController`, Spring serializes it to JSON.
+
+We distinguished an entity from a DTO. `UrlMapping` models the database row,
+including internal persistence concerns such as its ID and creation timestamp.
+The response DTO is the API promise: it exposes only fields a client needs.
+This prevents a future entity field or getter from accidentally becoming a
+public API field. `shortUrl` is also computed by the controller and is not a
+database column, which is another reason it belongs in a response DTO.
+
+After the DTO change, submitting the same URL again returned the same short
+code and short URL in the new JSON shape, confirming that idempotency was
+preserved.
+
+4. Validation must happen before persistence
+
+We added a custom `UrlValidator` that accepts HTTP and HTTPS URLs and rejects
+null values. The controller initially called the service before validating the
+request. Sending `{}` therefore passed `null` to the repository path and
+produced `500 Internal Server Error`. A malformed non-null value could also be
+saved before the controller eventually returned `400`.
+
+Moving the validation guard clause directly after `request.getUrl()` fixed the
+order:
+
+request value → validation → service/repository only when valid
+
+Invalid or missing URLs now return `400 Bad Request` and do not create rows.
+The accidentally stored `"not a URL"` row from the earlier ordering mistake
+was removed manually. This mistake was useful because it showed that returning
+the correct status is not enough if an unwanted side effect has already
+occurred.
+
+We also clarified status meanings. A malformed URL is invalid client input,
+so it is `400`, not `404`. `404 Not Found` applies when the application looks
+up a short code and has no matching resource.
+
+5. Centralized error responses
+
+We created `InvalidUrlException`, `ShortCodeNotFoundException`, and
+`ApiErrorResponse`. `HomeController` throws the invalid-URL exception before
+the service call, and `RedirectController` throws the missing-short-code
+exception when the service lookup returns `null`.
+
+`GlobalExceptionHandler` is annotated with `@RestControllerAdvice`. Its two
+specific `@ExceptionHandler` methods turn those Java exceptions into JSON
+responses containing `status` and `message`. Invalid URLs therefore return a
+structured `400`; unknown short codes return a structured `404`.
+
+While implementing the 404 handler, `ResponseEntity.noContent(error)` failed
+to compile. This revealed that `noContent()` represents `204 No Content`; a
+204 response cannot carry the JSON error body we wanted. The correct response
+was `ResponseEntity.status(HttpStatus.NOT_FOUND).body(error)`.
+
+6. HTTP creation semantics: 201 for a new mapping and 200 for an existing one
+
+The controller initially could return only `200`, because the service returned
+just a `String` and the controller could not know whether that code represented
+a new database row or an existing mapping. We introduced the small internal
+`ShortCodeResult` type with `shortCode` and `created` fields.
+
+The service returns `new ShortCodeResult(existingCode, false)` on the duplicate
+path and `new ShortCodeResult(newCode, true)` after saving. The controller now
+returns `201 Created` with `ResponseEntity.created(URI.create(shortUrl))` and
+a `Location` header for a new mapping, while an idempotent duplicate returns
+`200 OK`. A final smoke test verified both outcomes. This also clarified that
+the Location header must identify the newly created short link, not the
+destination/original URL.
+
+7. Package cleanup and IDE synchronization
+
+We used IntelliJ's safe Move refactoring rather than dragging files manually.
+Production packages are now lowercase and role-based: `service`, `validation`,
+`dto`, `controller`, `repository`, `entity`, and `exception`. `CreateUrlRequest`
+was moved beside the response DTOs, and test packages were moved to match the
+lowercase service package.
+
+After the moves, IntelliJ briefly reported that it could not find
+`GenerateShortCode`, although the file and package declaration were correct.
+Maven compilation successfully compiled all main sources, showing that the
+source layout was sound. Reloading Maven refreshed IntelliJ's stale project
+model. This was a useful distinction between a source-code error and an IDE
+index/model issue.
+
+8. Final implementation state and deliberately deferred work
+
+The MVP is working and has passed its final smoke tests:
+
+- a fresh valid `POST /api/urls` returns `201 Created`, a `Location` header,
+  and JSON;
+- posting the same URL returns `200 OK` and the existing mapping;
+- missing or malformed URLs return structured `400` JSON without database
+  rows;
+- a known `GET /{shortCode}` returns a `302` redirect;
+- an unknown short code returns structured `404` JSON.
+
+The project deliberately does not yet include a dedicated MySQL integration
+test database, controller tests with MockMvc, deterministic collision testing,
+Bean Validation annotations, URL normalization, security, deployment, or
+production database migrations. Those are future learning iterations, not
+missing requirements for this first MVP.
+
+Official reading, explained in plain language
+==============================================
+
+1. Mockito: mocks, stubbing, verification, and argument capture
+
+URL: https://site.mockito.org/javadoc/current/org/mockito/Mockito.html
+
+Why it matters: this session used `mock`, `when(...).thenReturn(...)`,
+`verify`, `never`, argument matchers, and `ArgumentCaptor` to test the service
+without MySQL.
+
+Concentrate on the contents entries “Let's verify some behaviour!”, “How about
+some stubbing?”, “Verifying exact number of invocations / never”, and
+“Capturing arguments for further assertions”. The key idea is that stubbing
+sets a mock's answer before the action, while verification and capture inspect
+how the real service used that mock afterward. You can ignore spies, partial
+mocks, callback stubbing, and consecutive-call stubbing for now.
+
+2. Spring MVC exception handling with controller advice
+
+URL: https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-exceptionhandler.html
+
+Why it matters: `GlobalExceptionHandler` uses `@RestControllerAdvice` and two
+specific `@ExceptionHandler` methods to translate project exceptions into JSON
+HTTP responses.
+
+Concentrate on the opening example and the “Exception Mapping” section. The
+key idea is that Spring can select a handler based on the thrown exception type,
+letting controllers signal a problem and one central class decide the HTTP
+status and response body. Ignore multiple advice ordering, nested-cause
+matching, and media-type-specific exception handlers for now.
+
+3. Spring MVC controller return values and ResponseEntity
+
+URL: https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-methods/return-types.html
+
+Why it matters: the controller used `ResponseEntity` for complete control over
+status, headers, and body: `200`, `201` with `Location`, `302` redirect, and
+JSON error bodies.
+
+Concentrate on the table row for `ResponseEntity<B>`. The key idea is that a
+plain DTO supplies a body, while `ResponseEntity` supplies the full HTTP
+response around that body. Ignore reactive return types, streaming, deferred
+results, and view-related return values for now.
+
+4. HTTP 201 Created
+
+URL: https://www.rfc-editor.org/rfc/rfc9110.html#section-15.3.2
+
+Why it matters: a new mapping is now explicitly distinguished from an existing
+idempotent mapping. The endpoint returns `201 Created` only when it saved a
+new row and includes the created resource's short URL in `Location`.
+
+Concentrate on Section 15.3.2, “201 Created”. The key idea is that the status
+means the request successfully resulted in one or more new resources, and the
+Location header can identify the created resource. Ignore the rest of the HTTP
+specification and conditional-request details for now.
+
+Next session: Begin only if continuing the project: merge the two service-test classes, remove exploratory logs/comments, then learn MockMvc controller tests for the final API contract.

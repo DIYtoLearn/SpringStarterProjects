@@ -92,9 +92,13 @@ Beginner.
 | `@RequestBody` | 4 | Bound JSON into `CreateUrlRequest` and extracted `url` through its getter. Understands that Spring converts the body into the declared Java type. |
 | JSON content type / `consumes` | 3 | Tested `consumes = application/json` and connected an incorrect content type with `415 Unsupported Media Type`. |
 | `@PathVariable` | 4 | Implemented a path-variable lookup for a generated short code. |
-| `ResponseEntity` / HTTP responses | 4 | Implemented `404 Not Found` for an unknown code and a `302 Found` response with a `Location` header for a redirect. |
+| `ResponseEntity` / HTTP responses | 5 | Uses `ResponseEntity` for `200 OK`, `201 Created` with a `Location` header, `302 Found`, structured `400 Bad Request`, and structured `404 Not Found` responses. |
 | In-memory maps | 4 | Implemented duplicate lookup, collision-safe code generation, insertion, and reverse lookup with two `HashMap`s; understands that maps moved to the shared service remain temporary. |
-| Validation | 0 | |
+| API DTO boundary | 4 | Created request, success-response, and error-response DTOs. Understands that entities represent database rows while DTOs define the public HTTP contract. |
+| Validation | 4 | Implemented a custom HTTP/HTTPS URL syntax validator and a controller guard clause that returns `400` before the service or database is called. Bean Validation is still new. |
+| Exception handling | 4 | Created `InvalidUrlException`, `ShortCodeNotFoundException`, and one `@RestControllerAdvice` with specific `@ExceptionHandler` methods returning `ApiErrorResponse`. |
+| HTTP creation semantics | 4 | Implemented an internal `ShortCodeResult` so a newly saved mapping produces `201 Created` with `Location`, while an existing idempotent mapping produces `200 OK`. |
+| Package organization | 4 | Refactored packages to lowercase `service` and `validation`, and grouped request/response types in `dto`; used IntelliJ Move/Reload Maven to update references safely. |
 | Spring Data JPA | 4 | Replaced the service's active map operations with repository duplicate lookup, short-code collision checks, entity saving, and redirect lookup; manually verified persistence across two application restarts. |
 | JPA entity mapping | 4 | Can map fields to `url_mapping` columns using `@Entity`, `@Table`, `@Id`, `@GeneratedValue`, and `@Column`; constructed and saved `UrlMapping` entities through the service. |
 | MySQL datasource configuration | 3 | Configured a JDBC URL and username in `application.properties`; keeps the password in an IntelliJ environment variable resolved through a property placeholder. |
@@ -103,7 +107,7 @@ Beginner.
 | `Optional` mapping and method references | 2 | Explored how `Optional<UrlMapping>.map(UrlMapping::getOriginalUrl).orElse(null)` transforms a present entity into a `String` while preserving the current `404` behavior for a missing code. |
 | Transactions | 0 | |
 
-| Mockito unit-test basics | 1 | Learned the purpose of a mock repository, stubbing with `when(...).thenReturn(...)`, and interaction checks with `verify(...)` / `never()`; has not yet completed or run a test. |
+| Mockito unit-test basics | 4 | Implemented and ran two repository-mocked service tests. Uses stubbing, `verify`, `never`, `ArgumentCaptor`, and `assertTrue`/`assertFalse` to test existing and new mapping paths without MySQL. |
 
 ## Recurring Mistakes
 
@@ -142,16 +146,26 @@ Beginner.
 - Mockito unit-test vocabulary: distinguish a mock from a real repository,
   stubbing a pre-arranged answer from querying a database, and verifying an
   interaction after the service method has run.
+- Bean Validation: the completed MVP uses a custom regex validator, not
+  `@Valid`, `@NotBlank`, or a standard URL constraint. Learn that alternative
+  in a later iteration rather than treating the two approaches as identical.
+- Service result design: reinforce why a `String` could not express both a
+  short code and whether it was newly created, while `ShortCodeResult` can.
+- HTTP semantics: practise why malformed input is `400`, a missing short-code
+  resource is `404`, and `204 No Content` cannot carry the JSON error body that
+  this API needs.
+- Test scope: distinguish the passing Mockito unit tests and context-load test
+  from a dedicated JPA/MySQL integration test with a separate test database,
+  which remains intentionally deferred.
 
 ## Current Objective
 
-Continue Phase 5 with the first Mockito unit test for the database-backed
-service. Resume the existing-URL path: first place the draft test in the
-matching `com.DeatHertZ.urlshortener.Service` test package, then complete its
-Arrange, Act, and Assert sections. It should return the stored link key and
-verify that neither collision checking nor saving occurs. Only after this test
-is understood and passing should the new-URL path and a separate real-database
-integration-test decision be explored.
+The first URL Shortener MVP is complete and manually smoke-tested. If the
+project continues, start a small cleanup/testing iteration: merge the two
+`UrlShortenerService` test classes, remove exploratory test logging and stale
+comments, then learn controller-level testing with MockMvc. Keep a dedicated
+JPA/MySQL integration test with an isolated test database as a separate,
+explicit future decision.
 
 ## Session Notes — 2026-08-14
 
@@ -373,6 +387,51 @@ integration-test decision be explored.
   `new GenerateShortCode()` internally, so its random result is not currently
   supplied through a constructor dependency that a unit test can control.
 - The learner started an untracked, incomplete draft at
-  `src/test/java/Service/UrlShortenerServiceTest.java`. Its `package Service;`
+  `../src/test/java/com/DeatHertZ/urlshortener/service/UrlShortenerServiceTest.java`. Its `package Service;`
   declaration does not yet mirror the production package and the method body is
   incomplete. It was intentionally left untouched for the learner to continue.
+
+## Session Notes - 2026-08-22 (MVP Completion: Tests, DTOs, Validation, Errors, and HTTP Semantics)
+
+- Completed the existing-URL Mockito unit test. It stubs
+  `findByOriginalUrl(...)` with `Optional.of(existing)`, asserts the returned
+  short code, asserts `isCreated()` is false, and verifies that neither
+  collision checking nor saving occurs.
+- Completed the new-URL Mockito unit test. It stubs `Optional.empty()` and an
+  unused candidate, captures the `UrlMapping` passed to `save(...)`, and proves
+  the saved link key matches the returned one. The test also verifies that the
+  service reports `isCreated()` as true. This demonstrated why an
+  `ArgumentCaptor` is useful when a method creates an object internally.
+- Ran all three tests in IntelliJ successfully: the two Mockito service tests
+  and `UrlshortenerApplicationTests`. The context test demonstrated that Spring
+  Boot, JPA/Hibernate, Hikari, and the local MySQL datasource can start
+  together when the database environment variables are present. A Codex
+  terminal run continued to have a JDK 25 Mockito agent-attachment limitation;
+  this was correctly identified as tooling-specific rather than a test logic
+  failure.
+- Created `CreateUrlResponse` so `POST /api/urls` returns deliberate JSON
+  fields (`shortCode`, `shortUrl`, and `url`) instead of a raw string or the
+  persistence entity. Verified that submitting the same URL still returns the
+  same mapping in this response shape.
+- Implemented custom URL validation with `UrlValidator`. The initial order put
+  the service call before validation, so `{}` caused a `500` and an invalid
+  non-null string could be saved before the response became `400`. Moved the
+  guard clause before the service call, removed the accidentally saved invalid
+  row, and verified invalid or missing URLs return `400` without creating rows.
+- Implemented structured error handling. `InvalidUrlException` and
+  `ShortCodeNotFoundException` signal the two expected domain failures;
+  `GlobalExceptionHandler` uses `@RestControllerAdvice` and specific
+  `@ExceptionHandler` methods to convert them into JSON `ApiErrorResponse`
+  bodies. This clarified that a malformed URL is `400 Bad Request`, whereas an
+  unknown public short code is `404 Not Found`. It also exposed that
+  `ResponseEntity.noContent()` means `204` and cannot have an error body.
+- Refactored packages using IntelliJ Move: lowercase `service`, `validation`,
+  and grouped `dto` packages. Maven compilation confirmed the refactor even
+  when IntelliJ initially showed a stale missing-class error for
+  `GenerateShortCode`; reloading Maven refreshed the IDE model.
+- Added `ShortCodeResult` at the service boundary because returning only a
+  `String` could not tell the controller whether it had created a database row.
+  A new URL now produces `201 Created` with a `Location` header pointing to the
+  new short URL; an idempotent duplicate produces `200 OK`. The learner ran the
+  final API smoke test for new creation, duplicate submission, invalid input,
+  known redirect, and unknown redirect successfully.

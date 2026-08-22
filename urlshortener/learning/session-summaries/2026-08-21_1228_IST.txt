@@ -85,4 +85,4 @@ Safely ignore parameterized tests, nested tests, extensions, conditional tests,
 parallel execution, and platform configuration until the first simple service
 test passes.
 
-Next session: Resume the existing-URL Mockito unit test. First move or recreate the draft in `src/test/java/com/DeatHertZ/urlshortener/Service/UrlShortenerServiceTest.java` with package `com.DeatHertZ.urlshortener.Service`, then complete its Arrange-Act-Assert sections and review any compilation errors before running it.
+Next session: Resume the existing-URL Mockito unit test. First move or recreate the draft in `src/test/java/com/DeatHertZ/urlshortener/Service/UrlShortenerServiceTest.java` with package `com.DeatHertZ.urlshortener.service`, then complete its Arrange-Act-Assert sections and review any compilation errors before running it.

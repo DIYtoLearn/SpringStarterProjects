@@ -1,4 +1,4 @@
-package com.DeatHertZ.urlshortener.Service;
+package com.DeatHertZ.urlshortener.dto;
 
 public class CreateUrlRequest {
     private String url;

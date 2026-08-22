@@ -1,4 +1,4 @@
-package com.DeatHertZ.urlshortener.Service;
+package com.DeatHertZ.urlshortener.service;
 
 import com.DeatHertZ.urlshortener.entity.UrlMapping;
 import com.DeatHertZ.urlshortener.repository.UrlMappingRepository;
@@ -19,7 +19,7 @@ public class UrlShortenerService {
 //    private final Map<String, String> urlToShortCode = new HashMap<>(); // Key - Long ULR and value - shortCode
 //    private final Map<String, String> shortCodeToUrl = new HashMap<>(); // Key - shortCode and value - Long URL
 
-    public String createOrGetShortCode(String originalUrl) {   // Map Store and generation logic
+    public ShortCodeResult createOrGetShortCode(String originalUrl) {   // Map Store and generation logic
 
         // Long URL already present
 //        if(urlToShortCode.containsKey(originalUrl)) // Old Logic for Long URL exist check !
@@ -27,7 +27,7 @@ public class UrlShortenerService {
 
         Optional<UrlMapping> existingMapping = urlMappingRepository.findByOriginalUrl(originalUrl);
         if(existingMapping.isPresent()){
-            return existingMapping.get().getLinkKey();
+            return new ShortCodeResult(existingMapping.get().getLinkKey(), false);
         }
 
         String shortCode;
@@ -48,7 +48,7 @@ public class UrlShortenerService {
         urlMappingRepository.save(urlMapping); // The database will generate id and created_at;
         // the service only needs to return shortCode.
 
-        return shortCode;
+        return new ShortCodeResult(shortCode, true);
     }
 
     public String findOriginalUrl(String shortCode) {  // lookup logic

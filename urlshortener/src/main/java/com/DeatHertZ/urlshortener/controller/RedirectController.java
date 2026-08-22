@@ -1,6 +1,7 @@
 package com.DeatHertZ.urlshortener.controller;
 
-import com.DeatHertZ.urlshortener.Service.UrlShortenerService;
+import com.DeatHertZ.urlshortener.service.UrlShortenerService;
+import com.DeatHertZ.urlshortener.exception.ShortCodeNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,8 +23,10 @@ public class RedirectController {
 
         String originalUrl = urlShortenerService.findOriginalUrl(shortCode);
 
-        if(originalUrl == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        if(originalUrl == null) {
+            throw new ShortCodeNotFoundException("Short code not found:" + shortCode);
+            //return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
 
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(originalUrl)).build();
     }

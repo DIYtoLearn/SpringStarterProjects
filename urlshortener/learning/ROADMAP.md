@@ -785,7 +785,7 @@ Status: Complete.
 
 ## Phase 5 — Database Persistence
 
-Status: **In progress**
+Status: **Complete for the MVP**
 
 Completed so far:
 
@@ -800,10 +800,12 @@ Completed so far:
   insertion, and redirect lookup with repository operations;
 - manually verified that mappings, duplicate behavior, redirects, and unknown
   codes work correctly and that saved rows survive two application restarts.
+- added Mockito tests for the existing-mapping and new-mapping service paths;
+- ran the Spring context-load test successfully with the configured local
+  MySQL datasource.
 
-Next: add automated tests for the existing-mapping and new-mapping service
-paths. Do not call Phase 5 complete until those behaviors are tested without
-depending solely on a manual DBeaver/API check.
+The isolated dedicated database integration-test decision is deferred; see the
+testing scope in `learning/DECISIONS.md`.
 
 Introduce:
 
@@ -843,6 +845,8 @@ MySQL
 
 ## Phase 6 — DTOs
 
+Status: **Complete for the MVP**
+
 Introduce:
 
 - Request DTO
@@ -850,9 +854,14 @@ Introduce:
 - separation between API models and persistence entities
 - mapping between DTOs and entities
 
+Completed: `CreateUrlRequest`, `CreateUrlResponse`, and `ApiErrorResponse`
+separate the HTTP contract from `UrlMapping`.
+
 ---
 
 ## Phase 7 — Validation
+
+Status: **Complete for the MVP with custom validation**
 
 Introduce:
 
@@ -862,9 +871,15 @@ Introduce:
 - URL validation
 - validation error responses
 
+Completed: `UrlValidator` rejects null, blank, and malformed values before the
+service call; invalid requests receive `400`. Bean Validation (`@Valid`,
+`@NotBlank`, and a constraint annotation) remains a future learning exercise.
+
 ---
 
 ## Phase 8 — Exception Handling
+
+Status: **Complete for the MVP**
 
 Introduce:
 
@@ -874,9 +889,14 @@ Introduce:
 - consistent API error responses
 - 404 behavior
 
+Completed: custom invalid-URL and missing-short-code exceptions are translated
+centrally by `@RestControllerAdvice` into a shared JSON error shape.
+
 ---
 
 ## Phase 9 — HTTP/API Semantics
+
+Status: **Complete for the MVP**
 
 Explore:
 
@@ -889,9 +909,15 @@ Explore:
 - redirects
 - REST conventions
 
+Completed: a newly saved mapping returns `201 Created` and a `Location` header;
+an idempotent existing mapping returns `200`; invalid input returns `400`;
+unknown short codes return `404`; known codes return `302`.
+
 ---
 
 ## Phase 10 — Testing
+
+Status: **Core MVP coverage complete; broader testing deferred**
 
 Introduce:
 
@@ -911,9 +937,16 @@ Test:
 - redirect behavior
 - short-code collision behavior
 
+Completed: Mockito tests cover the existing and normal new-mapping paths, and
+the Spring context-load test starts successfully with local MySQL. Controller
+tests with MockMvc, deterministic collision testing, and a dedicated database
+integration test are future focused exercises.
+
 ---
 
 ## Phase 11 — Refactoring and Review
+
+Status: **MVP review complete**
 
 Review the completed application.
 
@@ -930,6 +963,11 @@ Evaluate:
 - configuration
 
 The goal is to identify what was done poorly in the first iteration and improve it based on newly acquired Spring knowledge.
+
+Completed: packages were normalized to lowercase `service` and `validation`;
+DTOs were grouped under `dto`; imports and tests were moved with IntelliJ's
+safe Move refactoring. Optional future cleanup: merge the two service-test
+classes and remove exploratory logs/comments.
 
 ---
 
@@ -1007,21 +1045,16 @@ Do not immediately replace the student's implementation with a complete solution
 
 # 20. Immediate Next Step
 
-The active `UrlShortenerService` implementation now persists and retrieves URL
-mappings through `UrlMappingRepository`; manual API checks confirmed that MySQL
-rows survive application restarts. The old map code is retained only as
-commented learning reference.
+The first URL Shortener MVP is complete. It persists mappings in local MySQL,
+uses DTOs, returns deliberate HTTP success and error responses, and has passed
+the service-test, context-test, and manual smoke-test checks.
 
-Next learning steps:
+If continuing this project, begin a new focused iteration rather than adding
+features at random:
 
-1. Complete the first Mockito unit test for an existing URL. It should stub
-   `findByOriginalUrl`, assert the existing link key is returned, and verify
-   that neither `existsByLinkKey` nor `save` is called.
-2. Review why the test uses a mock repository instead of real MySQL, and why
-   the internally constructed random `GenerateShortCode` makes the new-URL path
-   harder to test deterministically.
-3. Design and write the new-URL service-path test only after the existing-URL
-   test is understood and passing.
-4. Decide separately whether a repository integration test should use a
-   dedicated MySQL test database. Only after tests are in place, mark the Phase
-   5 persistence replacement complete and move to the DTO phase.
+1. Merge the two `UrlShortenerService` test classes and remove exploratory
+   logging/comments.
+2. Learn controller-level testing with MockMvc for the `201`, `200`, `400`,
+   `404`, and redirect contracts.
+3. Decide separately whether to replace the custom validator with Bean
+   Validation and whether to add an isolated MySQL integration test.

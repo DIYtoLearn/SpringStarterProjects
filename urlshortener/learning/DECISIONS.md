@@ -215,8 +215,62 @@ the collision-retry strategy in their repository-backed equivalents.
 
 ### Status
 
-Accepted and manually verified across application restarts. Automated tests are
-still required before Phase 5 is considered complete.
+Accepted and verified across application restarts. The existing-URL and
+new-URL service paths are covered by Mockito unit tests; the Spring context
+test also starts against the configured local MySQL datasource.
+
+---
+
+## ADR-012 - MVP API DTO, Validation, and Error Contract
+
+### Decision
+
+For the MVP:
+
+- `POST /api/urls` accepts `CreateUrlRequest` and returns
+  `CreateUrlResponse` with `shortCode`, `shortUrl`, and `url`;
+- missing or malformed HTTP/HTTPS URLs are rejected before the service layer
+  through the custom `UrlValidator` and return an `ApiErrorResponse` with
+  `400 Bad Request`;
+- an unknown `GET /{shortCode}` returns an `ApiErrorResponse` with
+  `404 Not Found`;
+- `InvalidUrlException` and `ShortCodeNotFoundException` are translated by one
+  `@RestControllerAdvice` using specific `@ExceptionHandler` methods.
+
+### Reason
+
+DTOs keep the public JSON contract independent of database entity fields.
+Validating before invoking the service prevents invalid values from reaching
+MySQL. Central exception translation keeps expected error bodies consistent
+without placing JSON formatting logic in each controller.
+
+### Status
+
+Accepted and manually smoke-tested. Bean Validation annotations and a more
+standardized error format are deferred as later learning work.
+
+---
+
+## ADR-013 - New-versus-Existing Creation Response
+
+### Decision
+
+`UrlShortenerService.createOrGetShortCode(...)` returns `ShortCodeResult`,
+which contains the public code and a `created` flag. The controller returns:
+
+- `201 Created` with a `Location` header pointing to the short URL when a row
+  was newly saved;
+- `200 OK` when the submitted original URL already has a mapping.
+
+### Reason
+
+Returning only a `String` could not tell the controller which HTTP status was
+truthful. The small service result type preserves the service/controller
+boundary while retaining idempotent duplicate behavior.
+
+### Status
+
+Accepted and manually smoke-tested.
 
 ---
 
@@ -225,7 +279,6 @@ still required before Phase 5 is considered complete.
 Decisions that have not yet been finalized should be recorded here
 before implementation rather than invented by the AI.
 
-- Phase 5 testing scope: begin with Mockito unit tests that replace
-  `UrlMappingRepository` with a mock and verify service behavior. Whether and
-  how to add a JPA/MySQL integration test with a dedicated test database remains
-  undecided.
+- Dedicated JPA/MySQL integration test: the MVP deliberately stops with two
+  Mockito service tests plus the existing Spring context-load test. Decide on
+  an isolated MySQL test database only in a future testing-focused iteration.
