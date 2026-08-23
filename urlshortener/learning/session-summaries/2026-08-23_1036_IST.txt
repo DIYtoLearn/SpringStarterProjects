@@ -1,0 +1,115 @@
+URL Shortener Learning Session
+Date and time: 2026-08-23 10:36 IST
+
+What we explored / learned
+==========================
+
+1. Adding Bean Validation to the existing URL-validation design
+
+The final MVP task was to introduce standard Bean Validation without throwing
+away the custom `UrlValidator`. The application added
+`spring-boot-starter-validation`, allowing it to use the standard
+`jakarta.validation` annotations. The version was deliberately omitted because
+the Spring Boot parent already manages matching starter versions; briefly using
+a different Spring Boot milestone version showed why application dependencies
+should normally inherit the parent-managed version.
+
+The request DTO now declares `@NotBlank(message = "URL is required")` on its
+`url` field. This rule has a narrow job: it rejects a missing JSON property,
+`null`, an empty string, or whitespace-only text. At first, `@NotBlank` was
+placed on the DTO class. That was corrected after distinguishing a constraint
+on the `String` field from the separate `@Valid` annotation that asks Spring
+MVC to validate the request DTO at the controller boundary.
+
+2. Validation timing and the hybrid validation flow
+
+The controller now receives `@Valid @RequestBody CreateUrlRequest`. Spring
+first deserializes JSON into the DTO, then applies the DTO's constraints. If
+the request is `{}`, `url` is null and `@NotBlank` fails. Spring returns a
+client error before it calls `createShortUrl(...)`. This explained why the
+controller's custom URL validator and `InvalidUrlException` did not run for
+the missing-field case: no controller method body was reached.
+
+The resulting design intentionally has two stages. Bean Validation handles
+presence and blankness; `UrlValidator` handles a supplied value whose syntax is
+not an allowed HTTP/HTTPS URL. For example, a blank URL is a Bean Validation
+failure, while a nonblank `ftp://...` value passes `@NotBlank` and is rejected
+by the existing custom validator. Both are `400 Bad Request`, but they occur
+at different points in request processing.
+
+3. Translating framework validation errors into the application's API contract
+
+The first `{}` test produced Spring Boot's default JSON error body with fields
+such as `timestamp`, `status`, `error`, and `path`. This confirmed that
+validation worked, but it did not match the project's existing
+`ApiErrorResponse` contract. The reason was that Spring MVC threw
+`MethodArgumentNotValidException`, whereas `GlobalExceptionHandler` initially
+handled only the project's two custom exceptions.
+
+An additional `@ExceptionHandler(MethodArgumentNotValidException.class)` was
+added. It obtains the default message for the failed `url` field from the
+binding result, creates `ApiErrorResponse`, and returns it with HTTP 400. The
+manual retest succeeded, so the missing/blank and malformed-URL paths now both
+return the deliberate JSON error shape while preserving their different
+validation responsibilities.
+
+4. Final MVP state and repository note
+
+The planned URL Shortener MVP is complete: it creates idempotent short links,
+persists them in local MySQL through JPA, redirects known codes, uses DTOs and
+central exception translation, has the intended HTTP semantics, and now uses
+layered Bean Validation plus custom URL syntax validation. Earlier work had
+already manually smoke-tested the main API flow and run the Mockito service
+tests and Spring context test; this session manually verified the final Bean
+Validation error path.
+
+At session end, the working tree contained an untracked project-local
+`MethodArgumentNotValidException.java` and a literal `${project.build.directory}`
+folder containing build output. Neither belongs to the intended validation
+design. No application-code cleanup was performed during the end-of-session
+protocol, so these items should be reviewed and removed or ignored before a
+future commit.
+
+Official reading, explained in plain language
+==============================================
+
+1. Spring MVC controller validation
+
+URL: https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-validation.html
+
+Why it matters: this is the mechanism that made `{}` fail before the
+controller method executed. Concentrate on the opening explanation of
+validation of an `@RequestBody` annotated with `@Valid`, and the paragraph
+describing `MethodArgumentNotValidException`. The key idea is that `@Valid`
+does not itself impose a rule; it tells Spring to inspect the constraints
+declared inside the DTO, such as `@NotBlank` on `url`. You can ignore method
+validation on multiple direct method parameters, validation groups, and AOP
+details for now.
+
+2. Spring Boot validation support
+
+URL: https://docs.spring.io/spring-boot/reference/io/validation.html
+
+Why it matters: it explains why adding `spring-boot-starter-validation` made
+the validation infrastructure available. Concentrate on the opening paragraph
+about a Bean Validation implementation, such as Hibernate Validator, being on
+the classpath. The key idea is that Spring Boot configures the provider when
+the starter is present; application code then declares rules using
+`jakarta.validation` annotations. You can safely ignore service-method
+validation with `@Validated` and constraint annotations on service method
+parameters, since this MVP validates an HTTP request DTO in Spring MVC.
+
+3. Java Bean Validation in Spring Framework
+
+URL: https://docs.spring.io/spring-framework/reference/core/validation/beanvalidation.html
+
+Why it matters: this explains the broader model behind declaring constraints
+on object properties. Concentrate on the overview and the example using
+constraints such as `@NotNull` and `@Size`. The key idea is that constraints
+belong on the data they describe, which is why `@NotBlank` belongs on the
+`String url` field rather than on the entire request class. Ignore the manual
+`LocalValidatorFactoryBean` setup, AOP proxy discussion, and programmatic
+`DataBinder` examples for now; Spring Boot's starter configures what this MVP
+needs.
+
+Next session: The MVP is complete; before any commit or new iteration, first review and remove or ignore the untracked `MethodArgumentNotValidException.java` and `${project.build.directory}` artifacts, then explicitly choose an optional next learning objective.

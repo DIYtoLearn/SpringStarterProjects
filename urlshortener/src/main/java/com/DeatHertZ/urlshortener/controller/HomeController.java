@@ -6,6 +6,7 @@ import com.DeatHertZ.urlshortener.service.UrlShortenerService;
 import com.DeatHertZ.urlshortener.validation.UrlValidator;
 import com.DeatHertZ.urlshortener.dto.CreateUrlResponse;
 import com.DeatHertZ.urlshortener.exception.InvalidUrlException;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +35,7 @@ public class HomeController {
     }
 
     @PostMapping(value = "/urls", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreateUrlResponse> createShortUrl(@RequestBody CreateUrlRequest request) {
+    public ResponseEntity<CreateUrlResponse> createShortUrl(@RequestBody @Valid CreateUrlRequest request) {
         String originalUrl = request.getUrl(); // Extract only the long URL from the JSON body, file in service layer
         // For {}, Spring binds request.getUrl() to null. And controller calls: urlShortenerService.createOrGetShortCode(null)
         // Can result in null pointer Exception

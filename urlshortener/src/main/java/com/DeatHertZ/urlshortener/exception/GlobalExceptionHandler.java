@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -24,5 +25,13 @@ public class GlobalExceptionHandler {
         ApiErrorResponse error = new ApiErrorResponse(HttpStatus.NOT_FOUND.value(), exception.getMessage());
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidUrlViaBean(MethodArgumentNotValidException exception)
+    {
+        ApiErrorResponse error = new ApiErrorResponse(HttpStatus.BAD_REQUEST.value(), exception.getBindingResult().getFieldError("url").getDefaultMessage());
+
+        return ResponseEntity.badRequest().body(error);
     }
 }
