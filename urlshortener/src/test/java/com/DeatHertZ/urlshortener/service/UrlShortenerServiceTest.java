@@ -23,9 +23,10 @@ public class UrlShortenerServiceTest {
         4. Give that fake repository to a new UrlShortenerService through its const */
 
         String originalUrl = "https://example.com";
+        String shortUrl = "http://localhost:1999/abc123XYZ";
         UrlMappingRepository repository = mock(UrlMappingRepository.class); // creates a runtime object that implements the repository interface. It has no database connection
         UrlShortenerService service = new UrlShortenerService(repository); // UrlShortenerService → Mockito fake repository
-        UrlMapping existing = new UrlMapping("abc123XYZ", originalUrl); // tell the fake repo in advance how to respond, then check how the service used it.
+        UrlMapping existing = new UrlMapping("abc123XYZ", originalUrl, shortUrl); // tell the fake repo in advance how to respond, then check how the service used it.
 
         when(repository.findByOriginalUrl(originalUrl)) // Teaches the fake: “when asked about this URL, pretend the database found this mapping.”
                 .thenReturn(Optional.of(existing));

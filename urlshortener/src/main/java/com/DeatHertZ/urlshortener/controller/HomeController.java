@@ -10,7 +10,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.net.URI;
 
 @RestController
@@ -47,7 +46,9 @@ public class HomeController {
 
         ShortCodeResult result = urlShortenerService.createOrGetShortCode(originalUrl);
         String shortCode = result.getShortCode();
-        String shortUrl = "http://localhost:1999/" + shortCode;
+        String shortUrl = urlShortenerService.findTheShortURL(shortCode); // New Way of getting the short Code
+
+        //String shortUrl = "http://localhost:1999/" + shortCode;
         // Check if Long URL exists ? return existing short code
         // Done in service layer
         // Else Generate short code and return the new URL in response

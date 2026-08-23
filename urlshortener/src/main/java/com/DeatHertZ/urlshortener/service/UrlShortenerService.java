@@ -46,11 +46,12 @@ public class UrlShortenerService {
 //        urlToShortCode.put(originalUrl, shortCode);
 //        System.out.println("Current Map States \n"+urlToShortCode+" \n"+shortCodeToUrl); // print to check the current values
 
-        UrlMapping urlMapping = new UrlMapping(shortCode, originalUrl);
-        urlMappingRepository.save(urlMapping); // The database will generate id and created_at;
-        // the service only needs to return shortCode.
+        String shortUrl = "http://localhost:1999/"+shortCode; // Create the shortUrl string to be added to the database
 
-        return new ShortCodeResult(shortCode, true);
+        UrlMapping urlMapping = new UrlMapping(shortCode, originalUrl,shortUrl);
+        urlMappingRepository.save(urlMapping); // The database will generate id and created_at;
+
+        return new ShortCodeResult(shortCode, true); // the service only needs to return shortCode.
     }
 
     public String findOriginalUrl(String shortCode) {  // lookup logic
@@ -58,6 +59,12 @@ public class UrlShortenerService {
         return urlMappingRepository.findByLinkKey(shortCode)
                 .map(UrlMapping::getOriginalUrl)
                 .orElse(null);
+    }
+
+    public String findTheShortURL(String shortCode){
+        return urlMappingRepository.findByLinkKey(shortCode)
+                .map(UrlMapping::getShortUrl)
+                .orElse("Short URL Not present");
     }
 
     // Get All the Columns in database

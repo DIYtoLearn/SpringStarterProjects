@@ -10,10 +10,11 @@ public class UrlMapping {
     public UrlMapping(){
     }
 
-    public UrlMapping(String linkKey, String originalUrl)
+    public UrlMapping(String linkKey, String originalUrl, String shortUrl)
     {
         this.linkKey = linkKey;
         this.originalUrl = originalUrl;
+        this.shortUrl = shortUrl;
     }
 
     @Id
@@ -23,11 +24,14 @@ public class UrlMapping {
     @Column(name = "link_key", nullable = false, unique = true, length = 9)
     private String linkKey;
 
-    @Column(name = "original_url", nullable = false, unique = true ,length = 2048)
+    @Column(name = "original_url", nullable = false, updatable = false ,length = 2048)
     private String originalUrl;
 
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
+
+    @Column(name = "Short_url", nullable = false, updatable = false)
+    private String shortUrl;
 
     public String getLinkKey() {
         return linkKey;
@@ -35,5 +39,9 @@ public class UrlMapping {
 
     public String getOriginalUrl() {
         return originalUrl;
+    }
+
+    public String getShortUrl() {
+        return shortUrl;
     }
 }
