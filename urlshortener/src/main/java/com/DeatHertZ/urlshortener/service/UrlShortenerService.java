@@ -5,12 +5,14 @@ import com.DeatHertZ.urlshortener.repository.UrlMappingRepository;
 import org.springframework.stereotype.Service;
 //import java.util.HashMap;
 //import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class UrlShortenerService {
 
     private final UrlMappingRepository urlMappingRepository;
+
     public UrlShortenerService(UrlMappingRepository urlMappingRepository)
     {
         this.urlMappingRepository = urlMappingRepository;
@@ -56,5 +58,10 @@ public class UrlShortenerService {
         return urlMappingRepository.findByLinkKey(shortCode)
                 .map(UrlMapping::getOriginalUrl)
                 .orElse(null);
+    }
+
+    // Get All the Columns in database
+    public List<UrlMapping> getAllData(){
+       return urlMappingRepository.findAll();
     }
 }
