@@ -1,6 +1,6 @@
 HELP.md
 target/
-.codex
+.codex/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
